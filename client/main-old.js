@@ -33,7 +33,7 @@ parseOBJ( `../modele/obj/voxel.obj` )
   // ui.addRange( `rotateY`, 0, 0, 360, value => worldTransform( `rotate`, Math.PI * value / 180, 1 ) )
   // ui.addRange( `rotateZ`, 0, 0, 360, value => worldTransform( `rotate`, Math.PI * value / 180, 2 ) )
 
-  
+
   // ui.addRange( `fov`, 130, 0, 180, value => matrixData.fov = Math.PI * value / 180 )
   ui.addRange( `transX`, 0, -100, 100, value => drawer.matrix.translate( value, 0, 0 ) )
   ui.addRange( `transY`, 0, -100, 100, value => drawer.matrix.translate( 0, value, 0 )  )
@@ -41,7 +41,7 @@ parseOBJ( `../modele/obj/voxel.obj` )
   ui.addRange( `rotateX`, 0, 0, 360, value => drawer.matrix.rotateX( Math.PI * value / 180 ) )
   ui.addRange( `rotateY`, 0, 0, 360, value => drawer.matrix.rotateY( Math.PI * value / 180 ) )
   ui.addRange( `rotateZ`, 0, 0, 360, value => drawer.matrix.rotateZ( Math.PI * value / 180 ) )
-  
+
   let {vertices, colors, indices, normals} = model
 
   // drawer.vertices = vertices
@@ -89,51 +89,51 @@ parseOBJ( `../modele/obj/voxel.obj` )
 // ]
 
 
-// let vertices = [
-//   // front wall
-//   0, 0, 0,   20,0, 0,   0, 20,0,
-//   20,0, 0,   0, 20,0,   20,20,0,
+const vertices = [
+  // front wall
+  0, 0, 0,   20,0, 0,   0, 20,0,
+  20,0, 0,   0, 20,0,   20,20,0,
 
-//   // back wall
-//   0, 0, 20,  20,0, 20,  0, 20,20,
-//   20,0, 20,  0, 20,20,  20,20,20,
+  // back wall
+  0, 0, 20,  20,0, 20,  0, 20,20,
+  20,0, 20,  0, 20,20,  20,20,20,
 
-//   // right wall
-//   20,0, 20,  20,0, 0,   20,20,20,
-//   20,0, 0,   20,20,20,  20,20,0,
-  
-//   // left wall
-//   0, 0, 20,  0, 0, 0,   0, 20,20,
-//   0, 0, 0,   0, 20,20,  0, 20,0,
+  // right wall
+  20,0, 20,  20,0, 0,   20,20,20,
+  20,0, 0,   20,20,20,  20,20,0,
 
-//   // top wall
-//   0, 0, 0,   20,0 ,0,   0, 0, 20,
-//   20,0 ,0,   0, 0, 20,  20,0, 20,
+  // left wall
+  0, 0, 20,  0, 0, 0,   0, 20,20,
+  0, 0, 0,   0, 20,20,  0, 20,0,
 
-//   // bottom wall
-//   0, 20,0,   20,20,0,   0, 20,20,
-//   20,20,0,   0, 20,20,  20,20,20
-// ]
-// let colors = [
-//     /* * Colors
-//      * red: 1,0,0
-//      * green: 0,1,0
-//      * blue: 0,0,1
-//      * yellow: 1,1,0
-//      * cyan: 0,1,1
-//      * purple: .66, .13, .66
-//      */
-//     .66, .13, .66,
-//     1,   1,   0,
+  // top wall
+  0, 0, 0,   20,0 ,0,   0, 0, 20,
+  20,0 ,0,   0, 0, 20,  20,0, 20,
 
-//     1,   0,   0,
-//     0,   1,   0,
+  // bottom wall
+  0, 20,0,   20,20,0,   0, 20,20,
+  20,20,0,   0, 20,20,  20,20,20
+]
+const colors = [
+    /* * Colors
+     * red: 1,0,0
+     * green: 0,1,0
+     * blue: 0,0,1
+     * yellow: 1,1,0
+     * cyan: 0,1,1
+     * purple: .66, .13, .66
+     */
+    .66, .13, .66,
+    1,   1,   0,
 
-//     0,   0,   0,
-//     .1,  0,   1,
-//   ]
-// let indices = [
-//   0,1,2,
-//   1,2,3,
-// ]
+    1,   0,   0,
+    0,   1,   0,
+
+    0,   0,   0,
+    .1,  0,   1,
+  ]
+const indices = [
+  0,1,2,
+  1,2,3,
+]
 // let normals = []

@@ -1,3 +1,57 @@
+export const textureUtils = ( () => {
+  const ctx = document.createElement( `canvas` ).getContext( `2d` )
+
+  /** Set canvas width and height
+   * @param {Number} width
+   * @param {Number} [height] By default height = width
+   */
+  function resizeCanvas( width, height=width ) {
+    ctx.canvas.width = width
+    ctx.canvas.height = height
+  }
+
+  /** Create and load texture to WebGL
+   * @deprecated Not rewrited code
+   * @param {WebGLRenderingContext} gl
+   */
+  function createTexture( gl ) {
+    const tex = gl.createTexture()
+
+    gl.bindTexture( gl.TEXTURE_2D, tex )
+
+    gl.texImage2D( gl.TEXTURE_2D, 0, gl.RGBA, gl.RGBA, gl.UNSIGNED_BYTE, ctx.canvas )
+    gl.generateMipmap( gl.TEXTURE_2D )
+
+    gl.texParameteri( gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.NEAREST )
+    gl.texParameteri( gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.NEAREST )
+
+    return tex
+  }
+
+  /**
+   *
+   * @param {WebGLRenderingContext} gl
+   * @param {String} color1
+   * @param {String} color2
+   */
+  function makeCheckerTexture( gl, color1=`#fff`, color2=`#000` ) {
+    resizeCanvas( 2 )
+
+    ctx.fillStyle = color1
+    ctx.fillRect( 0, 0, 1, 1 )
+
+    ctx.fillStyle = color2
+    ctx.fillRect( 0, 0, 1, 1 )
+    ctx.fillRect( 1, 1, 1, 1 )
+
+    return createTexture( gl )
+  }
+
+  return {
+    makeCheckerTexture
+  }
+} )()
+
 /** Class of 4x4 matrix - X Y Z W
  */
 export class Matrix4 {
@@ -6,9 +60,9 @@ export class Matrix4 {
    */
   constructor( nums ) {
     if (nums) {
-      if (nums instanceof this.constructor)
-        this.data = nums.data
-      else if (nums.length = 16) {
+      if (nums instanceof Matrix4)
+        this.data = nums.data.slice()
+      else if (nums.length == 16) {
         if (nums instanceof Float32Array)
           this.data = nums
         else
@@ -32,8 +86,8 @@ export class Matrix4 {
     }
   }
   /** Multiply two matrices and return a new matrix
-   * @param {Number[]|Float32Array|Matrix4} matrixA 
-   * @param {Number[]|Float32Array|Matrix4} matrixB 
+   * @param {Number[]|Float32Array|Matrix4} matrixA
+   * @param {Number[]|Float32Array|Matrix4} matrixB
    */
   static multiply( matrixA, matrixB ) {
     let a = matrixA instanceof this ? matrixA.data.slice() : matrixA
@@ -100,8 +154,8 @@ export class Matrix4 {
 
     return this
   }
-  /** 
-   * @param {Number} fudgeFactor 
+  /**
+   * @param {Number} fudgeFactor
    */
   makeZToWMatrix( fudgeFactor ) {
     this.data = this.multiply( [
@@ -110,10 +164,10 @@ export class Matrix4 {
       0, 0, 1, fudgeFactor,
       0, 0, 0, 1
     ] ).data
-    
+
     return this
   }
-  /** 
+  /**
    * @param {Number} fieldOfViewInRadians field of view
    * @param {Number} aspect aspect of viewport (width / height)
    * @param {Number} near near Z clipping plane
@@ -132,10 +186,10 @@ export class Matrix4 {
 
     return this
   }
-  /** 
-   * @param {Number} width 
-   * @param {Number} height 
-   * @param {Number} depth 
+  /**
+   * @param {Number} width
+   * @param {Number} height
+   * @param {Number} depth
    */
   setProjection( width, height, depth ) {
     this.data = this.multiply( [
@@ -175,7 +229,7 @@ export class Matrix4 {
       0, -s, c, 0,
       0, 0, 0, 1
     ] ).data
-    
+
     return this
   }
   /** Rotate object around the Y axis
@@ -191,7 +245,7 @@ export class Matrix4 {
       s, 0, c, 0,
       0, 0, 0, 1
     ] ).data
-    
+
     return this
   }
   /** Rotate object around the Z axis
@@ -207,28 +261,28 @@ export class Matrix4 {
       0, 0, 1, 0,
       0, 0, 0, 1
     ] ).data
-    
+
     return this
   }
   /** Zoom in or zoom out the object
-   * @param {Number} sx X scale
-   * @param {Number} sy Y scale
-   * @param {Number} sz Z scale
+   * @param {Number} sx_scale X scale or scale for every axis
+   * @param {Number} [sy] Y scale
+   * @param {Number} [sz] Z scale
    */
-  scale( sx, sy, sz ) {
+  scale( sx_scale, sy=sx_scale, sz=sx_scale ) {
     this.data = this.multiply( [
-      sx, 0,  0,  0,
-      0, sy,  0,  0,
-      0,  0, sz,  0,
-      0,  0,  0,  1
+      sx_scale, 0,  0,  0,
+             0, sy, 0,  0,
+             0, 0,  sz, 0,
+             0, 0,  0,  1
     ] ).data
 
     return this
   }
   /** Creates a lookAt matrix for camera
-   * @param {Vector3} cameraPosition 
-   * @param {Vector3} target 
-   * @param {Vector3} up 
+   * @param {Vector3} cameraPosition
+   * @param {Vector3} target
+   * @param {Vector3} up
    */
   lookAt( cameraPosition, target, up ) {
     let axisZ = Vector3.subtract( cameraPosition, target ).normalize()
@@ -248,7 +302,7 @@ export class Matrix4 {
    */
   inverse() {
     let m = this.data.slice()
-    
+
     let m00 = m[ 0]
     let m01 = m[ 1]
     let m02 = m[ 2]
@@ -345,15 +399,15 @@ export class Matrix4 {
  */
 export class Vector3 {
   /**
-   * @param {Number|Number[]|Float32Array} [xOrV] Vector X value or all vector data
+   * @param {Number|Number[]|Float32Array} [xOrVectorArray] Vector X value or all vector data
    * @param {Number} [y] Y vector value
    * @param {Number} [z] Z vector value
    */
-  constructor( xOrV=0, y=0, z=0 ) {
-    if (xOrV.length === 3)
-      this.data = new Float32Array( xOrV )
+  constructor( xOrVectorArray=0, y=0, z=0 ) {
+    if (xOrVectorArray.length === 3)
+      this.data = new Float32Array( xOrVectorArray )
     else
-      this.data = new Float32Array( [xOrV, y, z] )
+      this.data = new Float32Array( [xOrVectorArray, y, z] )
   }
   /** Substract two vectors
    * @param {Vector3} vectorA First vector
@@ -376,7 +430,7 @@ export class Vector3 {
   static cross( vectorA, vectorB ) {
     let a = vectorA.data
     let b = vectorB.data
-    
+
     return new this(
       a[1] * b[2] - a[2] * b[1],
       a[2] * b[0] - a[0] * b[2],
@@ -399,7 +453,7 @@ export class Vector3 {
     return this
   }
   /** Transforms vector interpreted as a point by the matrix
-   * @param {Matrix4} matrix 
+   * @param {Matrix4} matrix
    */
   transformByMatrix( matrix ) {
     let [x, y, z] = this.data.slice()
@@ -416,7 +470,9 @@ export class Vector3 {
   }
 }
 /** Create WebGL shader from source
- * @param {WebGLRenderingContext} gl 
+ * @param {WebGLRenderingContext} gl
+ * @param {WebGLRenderingContextBase} type gl.VERTEX_SHADER or gl.FRAGMENT_SHADER
+ * @param {String} source
  */
 export function createShader( gl, type, source ) {
   const shader = gl.createShader( type )
@@ -427,14 +483,19 @@ export function createShader( gl, type, source ) {
   return shader
 }
 /** Create WebGL program from shaders
- *  @param {WebGLRenderingContext} gl
+ * @param {WebGLRenderingContext} gl
+ * @param {WebGLShader|String} vertexShader Shader or source code
+ * @param {WebGLShader|String} fragmentShader Shader or source code
  */
 export function createProgram( gl, vertexShader, fragmentShader ) {
   const program = gl.createProgram()
 
-  gl.attachShader( program, vertexShader )
+  vertexShader   = typeof vertexShader   == `string`  ?  createShader( gl, gl.VERTEX_SHADER, vertexShader )      :  vertexShader
+  fragmentShader = typeof fragmentShader == `string`  ?  createShader( gl, gl.FRAGMENT_SHADER, fragmentShader )  :  fragmentShader
 
+  gl.attachShader( program, vertexShader )
   gl.attachShader( program, fragmentShader )
+
   gl.linkProgram( program )
 
   if( !gl.getProgramParameter( program, gl.LINK_STATUS ) )
@@ -442,33 +503,106 @@ export function createProgram( gl, vertexShader, fragmentShader ) {
 
   return program
 }
-/** Create and load texture to WebGL
- * @deprecated Not rewrited code
+/** Get webgl program uniforms
  * @param {WebGLRenderingContext} gl
- * @param {String} src
+ * @param {WebGLProgram} program
  */
-export function createTexture( gl, src, alternateColor=[0,0,0,255] ) {
-  const texture = gl.createTexture()
-  const image   = new Image
-  image.src     = src
+export function getActiveUniforms( gl, program ) {
+  const numUniforms = gl.getProgramParameter( program, gl.ACTIVE_UNIFORMS )
+  const uniforms = {}
 
-  gl.bindTexture( gl.TEXTURE_2D, texture )
-  gl.texImage2D( gl.TEXTURE_2D, 0, gl.RGBA, 1, 1, 0, gl.RGBA, gl.UNSIGNED_BYTE, new Uint8Array( alternateColor ) )
+  for ( let i = 0;  i < numUniforms;  ++i ) {
+    const info = gl.getActiveUniform( program, i );
 
-  image.onload = () => {
-    gl.bindTexture( gl.TEXTURE_2D, texture )
-    gl.texImage2D( gl.TEXTURE_2D, 0, gl.RGBA, gl.RGBA, gl.UNSIGNED_BYTE, image )
-    gl.generateMipmap( gl.TEXTURE_2D )
-
-    // if( IS_POWER_OF_TWO(image.width) && IS_POWER_OF_TWO(image.height) )
-    //   gl.generateMipmap( gl.TEXTURE_2D )
-
-    // else {
-      gl.texParameteri( gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.CLAMP_TO_EDGE )
-      gl.texParameteri( gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.CLAMP_TO_EDGE )
-      gl.texParameteri( gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.LINEAR )
-    // }
+    uniforms[ info.name ] = gl.getUniformLocation( program, info.name )
   }
 
-  return texture
+  return uniforms
+}
+/** Get webgl program attributes
+ * @param {WebGLRenderingContext} gl
+ * @param {WebGLProgram} program
+ */
+export function getActiveAttributes( gl, program ) {
+  const numUniforms = gl.getProgramParameter(program, gl.ACTIVE_ATTRIBUTES )
+  const attributes = {}
+
+  for ( let i = 0;  i < numUniforms;  ++i ) {
+    const info = gl.getActiveAttrib( program, i );
+
+    attributes[ info.name ] = gl.getAttribLocation( program, info.name )
+  }
+
+  return attributes
+}
+/** Create vertex attributes object and set attributes data in buffers
+ * @param {WebGLRenderingContext} gl
+ * @param {*} attributesPos WebGl attributes positions
+ * @param {{ numComponents:Number, data:Number[] }} attributes
+ */
+export function createVAOAndSetAttributes( gl, attributesPos, attributes ) {
+  const vao = gl.createVertexArray()
+
+  gl.bindVertexArray( vao )
+
+  for ( const attribute in attributes ) {
+    const attr = attributes[ attribute ]
+    const attrPos = attributesPos[ attribute ]
+    const buffer = gl.createBuffer()
+
+    gl.enableVertexAttribArray( attrPos )
+    gl.bindBuffer( gl.ARRAY_BUFFER, buffer )
+    gl.bufferData( gl.ARRAY_BUFFER, attr.data, gl.STATIC_DRAW )
+
+    const type = gl.FLOAT   // the data is 32bit floats
+    const normalize = false // don't normalize the data
+    const stride = 0        // 0 = move forward size * sizeof(type) each iteration to get the next position
+    const offset = 0        // start at the beginning of the buffer
+    gl.vertexAttribPointer( attrPos, attr.numComponents, type, normalize, stride, offset)
+  }
+
+  return vao
+}
+/** Create matrices
+ * @param {Object} param0
+ * @param {Vector3} param0.camera
+ * @param {Vector3} param0.target
+ * @param {Vector3} param0.up
+ * @param {Number} param0.fieldOfViewRadians
+ * @param {Number} param0.aspect
+ * @param {Number} param0.zNear
+ * @param {Number} param0.zFar
+ */
+export function createMatrices( {
+  camera: cam,
+  target,
+  up,
+  fieldOfViewRadians,
+  aspect,
+  zNear,
+  zFar,
+  worldRotateX,
+  worldRotateY
+} ) {
+  const projection = new Matrix4().setPerspective( fieldOfViewRadians, aspect, zNear, zFar )
+  const camera = new Matrix4().lookAt( cam, target, up )
+  const view = new Matrix4( camera ).inverse()
+  const viewProjection = new Matrix4( projection ).multiply( view )
+
+  const world = new Matrix4().rotateX( worldRotateX ).rotateY( worldRotateY )
+  const worldInverse = new Matrix4( world ).inverse()
+  const worldInverseTranspose = new Matrix4( worldInverse ).transpose()
+  const worldViewProjection = new Matrix4( viewProjection ).multiply( world )
+
+  return {
+    camera: camera.data,
+
+    view: view.data,
+    viewProjection: viewProjection.data,
+
+    world: world.data,
+    worldInverse: worldInverse.data,
+    worldInverseTranspose: worldInverseTranspose.data,
+    worldViewProjection: worldViewProjection.data
+  }
 }

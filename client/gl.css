@@ -1,0 +1,39 @@
+
+/* *
+ * Normalize */
+
+ * {
+  box-sizing: border-box;
+}
+
+:root {
+  --white: #F0F0F0;
+  --green: #5ca134;
+  --gray: #555;
+}
+
+body {
+  background: #272625;
+  font-family: sans-serif;
+  margin: 0;
+  color: var( --white );
+}
+
+
+
+/* *
+ * Own classes */
+
+.gl {
+  position: fixed;
+  left: 0;
+  top: 0;
+  width: 100vw;
+  height: 100vh;
+}
+
+#uiContainer {
+  position: fixed;
+  right: 0;
+  top: 0;
+}
