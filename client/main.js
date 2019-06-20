@@ -15,7 +15,7 @@ const { makeCheckerTexture } = textureUtils
 
 const vertexShaderSource = `#version 300 es
   uniform mat4 u_worldViewProjection;
-  uniform vec3 u_lightWorldPos;
+  uniform vec3 u_lightWorldPosition;
   uniform mat4 u_world;
   uniform mat4 u_viewInverse;
   uniform mat4 u_worldInverseTranspose;
@@ -34,17 +34,11 @@ const vertexShaderSource = `#version 300 es
     v_texCoord = a_texcoord;
     v_position = (u_worldViewProjection * a_position);
     v_normal = (u_worldInverseTranspose * vec4(a_normal, 0)).xyz;
-    v_surfaceToLight = u_lightWorldPos - (u_world * a_position).xyz;
+    v_surfaceToLight = u_lightWorldPosition - (u_world * a_position).xyz;
     v_surfaceToView = (u_viewInverse[3] - (u_world * a_position)).xyz;
     gl_Position = v_position;
   }
 `
-
-// u_colorMult: [ 1, 1, 1, 1 ],
-// u_diffuse: makeCheckerTexture( gl ),
-// u_specular: [1, 1, 1, 1],
-// u_shininess: 150,
-// u_specularFactor: 0,
 
 const fragmentShaderSource = `#version 300 es
   precision mediump float;
@@ -74,13 +68,14 @@ const fragmentShaderSource = `#version 300 es
   }
 
   void main() {
-    vec4 u_lightColor = vec4( 0, 1, 1, 1 ); // - - - - - - - - - - - - - - - - - TO REWRITE
+    vec4 u_lightColor = vec4( 1, 1, 1, 1 ); // - - - - - - - - - - - - - - - - - - TO REWRITE
 
-    vec4 diffuseColor = texture( u_diffuse, v_texCoord );
+    vec4 diffuseColor = vec4( 0, 1, 0, 1 ); //texture( u_diffuse, v_texCoord ); // TO REWRITE
     vec3 a_normal = normalize( v_normal);
     vec3 surfaceToLight = normalize( v_surfaceToLight );
     vec3 surfaceToView = normalize( v_surfaceToView );
     vec3 halfVector = normalize( surfaceToLight + surfaceToView );
+
     vec4 litR = lit(
       dot( a_normal, surfaceToLight ),
       dot( a_normal, halfVector ),
@@ -100,6 +95,8 @@ function main() {
   // Get A WebGL context
   /** @type {HTMLCanvasElement} */
   const canvas = document.querySelector( `.gl` )
+  // Get A WebGL context
+  /** @type {WebGLRenderingContext} */
   const gl = canvas.getContext( `webgl2` )
 
   if ( !gl )
@@ -108,24 +105,34 @@ function main() {
   canvas.width = window.innerWidth
   canvas.height = window.innerHeight
 
-  const programInfo = createProgram( gl, vertexShaderSource, fragmentShaderSource )
-  const attributes = getActiveAttributes( gl, programInfo )
-  const uniforms = getActiveUniforms( gl, programInfo )
+  const program = createProgram( gl, vertexShaderSource, fragmentShaderSource )
+  const attributes = getActiveAttributes( gl, program )
+  const uniforms = getActiveUniforms( gl, program )
 
   const objects = [
     { // barrel
-      programInfo,
+      program,
       bufferInfo: null,
       vertexArray: null,
       uniforms: null,
       instances: [
         {
-          // radius: rand(150),
-          // xRotation: rand(Math.PI * 2),
-          // yRotation: rand(Math.PI),
+          translateY: -75,
+          translateZ: -200,
           materialUniforms: {
             u_colorMult: [ 1, 1, 1, 1 ],
-            u_diffuse: makeCheckerTexture( gl ),
+            u_diffuse: makeCheckerTexture( gl, `#ff00ff`, `#0000ff` ),
+            u_specular: [1, 1, 1, 1],
+            u_shininess: 150,
+            u_specularFactor: 0,
+          }
+        },
+        {
+          translateY: 75,
+          translateZ: -200,
+          materialUniforms: {
+            u_colorMult: [ 1, 1, 1, 1 ],
+            u_diffuse: makeCheckerTexture( gl, `#ff0000`, `#00ff00` ),
             u_specular: [1, 1, 1, 1],
             u_shininess: 150,
             u_specularFactor: 0,
@@ -138,7 +145,10 @@ function main() {
   const vao = createVAOAndSetAttributes( gl, attributes, {
     a_position: { numComponents:3, data:getGeometry() },
     a_normal:   { numComponents:3, data:getNormals() },
+    a_texcoord: { numComponents:2, data:getNormals() }
   } )
+
+  objects[ 0 ].vertexArray = vao
 
   function radToDeg(r) {
     return r * 180 / Math.PI;
@@ -158,48 +168,102 @@ function main() {
   let innerLimit = degToRad(10);
   let outerLimit = degToRad(20);
 
-  drawScene();
+  drawScene2();
 
   // Setup a ui.
   webglLessonsUI.setupSlider("#fRotationX",     {value: radToDeg(fRotationRadiansX), slide: updateRotationX, min: -360, max: 360});
   webglLessonsUI.setupSlider("#fRotationY",     {value: radToDeg(fRotationRadiansY), slide: updateRotationY, min: -360, max: 360});
-  webglLessonsUI.setupSlider("#lightRotationX", {value: lightRotationX, slide: updatelightRotationX, min: -2, max: 2, precision: 2, step: 0.001});
-  webglLessonsUI.setupSlider("#lightRotationY", {value: lightRotationY, slide: updatelightRotationY, min: -2, max: 2, precision: 2, step: 0.001});
+  webglLessonsUI.setupSlider("#lightRotationX", {value: lightRotationX, slide: updatelightRotationX, min: -200, max: 200, precision: 2, step: 0.001});
+  webglLessonsUI.setupSlider("#lightRotationY", {value: lightRotationY, slide: updatelightRotationY, min: -200, max: 200, precision: 2, step: 0.001});
   webglLessonsUI.setupSlider("#innerLimit",     {value: radToDeg(innerLimit), slide: updateInnerLimit, min: 0, max: 180});
   webglLessonsUI.setupSlider("#outerLimit",     {value: radToDeg(outerLimit), slide: updateOuterLimit, min: 0, max: 180});
 
   function updateRotationX(event, ui) {
     fRotationRadiansX = degToRad(ui.value);
-    drawScene();
+    drawScene2();
   }
   function updateRotationY(event, ui) {
     fRotationRadiansY = degToRad(ui.value);
-    drawScene();
+    drawScene2();
   }
   function updatelightRotationX(event, ui) {
     lightRotationX = ui.value;
-    drawScene();
+    drawScene2();
   }
   function updatelightRotationY(event, ui) {
     lightRotationY = ui.value;
-    drawScene();
+    drawScene2();
   }
   function updateInnerLimit(event, ui) {
     innerLimit = degToRad(ui.value);
-    drawScene();
+    drawScene2();
   }
   function updateOuterLimit(event, ui) {
     outerLimit = degToRad(ui.value);
-    drawScene();
+    drawScene2();
   }
-  function drawScene() {
+  function drawScene2() {
     gl.viewport( 0, 0, gl.canvas.width, gl.canvas.height )
     gl.clear( gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT )
 
     gl.enable( gl.CULL_FACE )
     gl.enable( gl.DEPTH_TEST )
 
-    gl.useProgram( programInfo )
+    const matrices = createMatrices( {
+      camera, target, up, fieldOfViewRadians,
+
+      worldRotateX: fRotationRadiansX,
+      worldRotateY: fRotationRadiansY,
+
+      aspect: gl.canvas.clientWidth / gl.canvas.clientHeight,
+      zNear: 1,
+      zFar: 1000
+    } )
+
+    for ( const object of objects ) {
+      const { program, vertexArray, instances } = object
+
+      gl.useProgram( program )
+
+      gl.bindVertexArray( vertexArray )
+
+      gl.uniform4fv( uniforms.u_color, [0.2, 1, 0.2, 1] ) // green
+
+      const lightPosition = new Vector3( lightRotationX, lightRotationY, 300 )
+      gl.uniform3fv( uniforms.u_lightWorldPosition, lightPosition.data )
+      gl.uniform3fv( uniforms.u_viewWorldPosition, camera.data )
+
+      for ( const { materialUniforms, translateX:x=0, translateY:y=0, translateZ:z=0 } of instances ) {
+        const world = new Matrix4( matrices.world ).translate( x + angle, y, z )
+        const worldViewProjection = new Matrix4( matrices.worldViewProjection ).multiply( world )
+        const worldInverseTranspose = new Matrix4( new Matrix4( world ).inverse() ).transpose()
+
+        gl.uniformMatrix4fv( uniforms.u_worldViewProjection, false, worldViewProjection.data )
+        gl.uniformMatrix4fv( uniforms.u_worldInverseTranspose, false, worldInverseTranspose.data )
+        gl.uniformMatrix4fv( uniforms.u_world, false, world.data )
+
+        gl.uniform1f( uniforms.u_shininess, materialUniforms.u_shininess )
+        gl.uniform4fv( uniforms.u_colorMult, materialUniforms.u_colorMult )
+        gl.uniform4fv( uniforms.u_specular, materialUniforms.u_specular )
+        gl.uniform1f( uniforms.u_specularFactor, materialUniforms.u_specularFactor )
+
+        // gl.activeTexture( gl.TEXTURE0 );
+        // gl.bindTexture( gl.TEXTURE_2D, materialUniforms.u_diffuse );
+        // gl.uniform1i( uniforms.u_diffuse, 0 );
+
+        gl.drawArrays( gl.TRIANGLES, 0, count )
+      }
+
+    }
+  }
+  function draw() {
+    gl.viewport( 0, 0, gl.canvas.width, gl.canvas.height )
+    gl.clear( gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT )
+
+    gl.enable( gl.CULL_FACE )
+    gl.enable( gl.DEPTH_TEST )
+
+    gl.useProgram( program )
 
     gl.bindVertexArray( vao )
 
@@ -259,10 +323,20 @@ function main() {
     var offset = 0;
     // var count = 16 * 6
     gl.drawArrays(primitiveType, offset, count);
-
   }
+
+  setInterval( () => {
+    angle += incrementator
+
+    if ( Math.abs( angle ) > 500 )
+      incrementator *= -1
+
+    drawScene2()
+  }, 10 )
 }
 
+let incrementator = 2
+let angle = 0
 let count = 0
 const myData = true
 const getGeometry = myData  ?  myGeo  :  notMyGeo
@@ -288,6 +362,7 @@ let normals = new Float32Array( [
   0, 0, 1,
   0, 0, 1
 ] )
+let texCoords
 
 const myModels = {
   cube: {
@@ -347,10 +422,11 @@ loadTheModel( `./barrel.obj` ).then( models => {
   const model = models[ 0 ].glData
   // const model = myModels.cube
 
-  console.log( model )
+  console.log( models[ 0 ] )
 
   positions = new Float32Array( model.vertices )
   normals = new Float32Array( model.normals )
+  // texCoords = new Float32Array( model. )
 
   main()
 } )

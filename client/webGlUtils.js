@@ -34,13 +34,13 @@ export const textureUtils = ( () => {
    * @param {String} color1
    * @param {String} color2
    */
-  function makeCheckerTexture( gl, color1=`#fff`, color2=`#000` ) {
+  function makeCheckerTexture( gl, color1=`#ffffff`, color2=`#000000` ) {
     resizeCanvas( 2 )
 
     ctx.fillStyle = color1
-    ctx.fillRect( 0, 0, 1, 1 )
+    ctx.fillRect( 0, 0, 2, 2 )
 
-    ctx.fillStyle = color2
+    ctx.fillStyle = color1
     ctx.fillRect( 0, 0, 1, 1 )
     ctx.fillRect( 1, 1, 1, 1 )
 
@@ -595,14 +595,14 @@ export function createMatrices( {
   const worldViewProjection = new Matrix4( viewProjection ).multiply( world )
 
   return {
-    camera: camera.data,
+    camera,
 
-    view: view.data,
-    viewProjection: viewProjection.data,
+    view,
+    viewProjection,
 
-    world: world.data,
-    worldInverse: worldInverse.data,
-    worldInverseTranspose: worldInverseTranspose.data,
-    worldViewProjection: worldViewProjection.data
+    world,
+    worldInverse,
+    worldInverseTranspose,
+    worldViewProjection
   }
 }

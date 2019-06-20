@@ -11,8 +11,7 @@ class OBJModel {
       vertices: [],
       normals: [],
       indices: [],
-      colors: [],
-      vertices2: []
+      colors: []
     }
   }
 
@@ -39,8 +38,7 @@ class OBJModel {
     for await ( let [ prefix, value ] of readTheFile( pathToOBJ ) )
       switch ( prefix ) {
         case `v`: { // vertice
-          vertices.push(
-            value
+          vertices.push( value
             .split( / /g )
             .map( coord => {
               coord = +coord
@@ -53,15 +51,13 @@ class OBJModel {
           )
         } break
         case `vn`: { // vertice normal
-          normals.push(
-            value
+          normals.push( value
             .split( / /g )
             .map( coord => +coord )
           )
         } break
-        case `vt`: { // vertice normal
-          textureCoords.push(
-            value
+        case `vt`: { // vertice texture cords
+          textureCoords.push( value
             .split( / /g )
             .map( coord => +coord )
           )
@@ -70,7 +66,7 @@ class OBJModel {
           if ( !activeMaterial ) {
             materials.set( 'undefined', {
               faces: [],
-              kd: [.3,.3,.3],
+              kd: [ .3, .3, .3 ],
               mapKd: {
                 width: 0,
                 height: 0,
@@ -82,7 +78,7 @@ class OBJModel {
 
           let texWidth = activeMaterial.mapKd.width  ||  1
           let texHeight = activeMaterial.mapKd.height  ||  1
-          let texColors = activeMaterial.mapKd.data.length  ?  activeMaterial.mapKd.data  : [activeMaterial.kd]
+          let texColors = activeMaterial.mapKd.data.length  ?  activeMaterial.mapKd.data  : [ activeMaterial.kd ]
           let faceElements = value.split( / /g )
 
           faces.push( faceElements )
@@ -90,31 +86,34 @@ class OBJModel {
           faceElements
           .reduce( (faceElements, element, index, array) => {
             if ( index > 2 ) {
-              faceElements.push( array[0] )
-              faceElements.push( array[index - 1] )
+              faceElements.push( array[ 0 ] )
+              faceElements.push( array[ index - 1 ] )
             }
 
             faceElements.push( element )
 
             return faceElements
           }, [] )
-          .forEach( (element, index) => {
-            if( !faces.includes( element ) ) {
+          .forEach( element => {
+            if ( !faces.includes( element ) ) {
               facesElements.push( element )
               let nums = element.match( /(?<vertex>\d+)\/(?:(?<texture>\d+))?\/?(?<normal>\d+)/ ).groups
 
               nums.color = [
-                textureCoords[+nums.texture - 1][0] * texWidth,
-                textureCoords[+nums.texture - 1][1] * texHeight
+                textureCoords[ +nums.texture - 1 ][ 0 ] * texWidth,
+                textureCoords[ +nums.texture - 1 ][ 1 ] * texHeight
               ].map( pos => {
                 let i = 1
-                while( pos > i ) i++
+
+                while ( pos > i )
+                  i++
+
                 return i - 1
               } ).reduce( (x, y) => x + y * texWidth )
 
-              model.glData.vertices.push( ...vertices[nums.vertex - 1].map( coord => coord / biggestVert ) )
-              model.glData.colors.push( ...texColors[nums.color] )
-              model.glData.normals.push( ...normals[nums.normal - 1] )
+              model.glData.vertices.push( ...vertices[ nums.vertex - 1 ].map( coord => coord / biggestVert ) )
+              model.glData.colors.push( ...texColors[ nums.color ] )
+              model.glData.normals.push( ...normals[ nums.normal - 1 ] )
             }
 
             model.glData.indices.push( facesElements.indexOf( element ) )
@@ -125,8 +124,9 @@ class OBJModel {
         } break
         case `mtllib`: { // fetch .mtl file
           let newMtl
-          for await( let [ mtlPrefix, mtlValue ] of readTheFile( `${pathToOBJFolder}${value}` ) ) {
-            if( mtlPrefix === `newmtl` ) {
+
+          for await ( let [ mtlPrefix, mtlValue ] of readTheFile( `${pathToOBJFolder}${value}` ) ) {
+            if ( mtlPrefix === `newmtl` ) {
               materials.set( mtlValue, {
                 faces: [],
                 kd: [],
@@ -137,10 +137,11 @@ class OBJModel {
                 }
               } )
               newMtl = materials.get( mtlValue )
-            } else if( !newMtl )
+            }
+            else if ( !newMtl )
               continue
 
-            switch( mtlPrefix ) {
+            switch ( mtlPrefix ) {
               case 'Kd': {
                 newMtl.kd = mtlValue
                   .split( / /g )
@@ -158,11 +159,12 @@ class OBJModel {
                 ctx.drawImage( image, 0, 0 )
 
                 let imageData = ctx.getImageData( 0, 0, image.width, image.height )
-                for( let pixels = imageData.data, i = 0;  i < pixels.length;  i += 4 )
+
+                for ( let pixels = imageData.data, i = 0;  i < pixels.length;  i += 4 )
                   newMtl.mapKd.data.push( [
-                    pixels[i + 0] / 255 * newMtl.kd[0],
-                    pixels[i + 1] / 255 * newMtl.kd[1],
-                    pixels[i + 2] / 255 * newMtl.kd[2],
+                    pixels[ i + 0 ] / 255 * newMtl.kd[ 0 ],
+                    pixels[ i + 1 ] / 255 * newMtl.kd[ 1 ],
+                    pixels[ i + 2 ] / 255 * newMtl.kd[ 2 ],
                   ] )
               } break
             }
@@ -213,5 +215,17 @@ class OBJModel {
     return models
   }
 }
+
+// it is not working at the moment
+class Material {
+  constructor( name ) {
+    this.name = name
+    this.faces = []
+    this.kd = []
+    this.kdMap = { width:0, height:0, data:[] }
+  }
+}
+
+OBJModel.Material = Material
 
 export default OBJModel.parse
