@@ -128,7 +128,8 @@ async function main() {
           translateZ: -200,
           materialUniforms: {
             u_colorMult: [ 1, 1, 1, 1 ],
-            u_diffuse: makeCheckerTexture( gl, `#ff0000`, `#00ff00` ),
+            // u_diffuse: makeCheckerTexture( gl, `#ff0000`, `#00ff00` ),
+            u_diffuse: await makeImgTexture( gl, `./models/barrel.png` ),
             u_specular: [1, 1, 1, 1],
             u_shininess: 150,
             u_specularFactor: 0,
@@ -223,13 +224,27 @@ async function main() {
   }
 
   setInterval( () => {
-    translateX += incrementator
-    rotateX += incrementator * 1
+    // translateX += incrementator
+    // rotateX += incrementator * 1
 
-    if ( Math.abs( translateX ) > 250 )
-      incrementator *= -1
+    // if ( Math.abs( translateX ) > 250 )
+    //   incrementator *= -1
 
-      draw()
+    if ( keys[ 37 ] )
+      camera.data[ 0 ] += -1
+    if ( keys[ 39 ] )
+      camera.data[ 0 ] += 1
+
+    if ( keys[ 38 ] )
+      camera.data[ 2 ] += -1
+    if ( keys[ 40 ] )
+      camera.data[ 2 ] += 1
+
+    target.data[ 0 ] = camera.data[ 0 ]
+    target.data[ 1 ] = camera.data[ 1 ]
+    target.data[ 2 ] = camera.data[ 2 ] - 100
+
+    draw()
   }, 10 )
 }
 
@@ -237,6 +252,9 @@ let incrementator = .5
 let translateX = 0
 let rotateX = 0
 let count = 0
+
+const keys = []
+const mouse = { clientX:null, clientY:null, x:null, y:null,}
 
 const camera = new Vector3( [0, 0, 100] )
 const target = new Vector3( [0, 0, 0] )
@@ -282,3 +300,12 @@ function getNormals() {
 function getTexcoords() {
   return texCoords
 }
+
+window.keys = keys
+
+document.addEventListener( `keydown`, e => keys[ e.keyCode ] = true )
+document.addEventListener( `keyup`, e => keys[ e.keyCode ] = false )
+document.addEventListener( `mousemove`, ({ clientX, clientY }) => {
+  mouse.clientX = clientX
+  mouse.clientY = clientY
+} )
