@@ -10,7 +10,7 @@ import {
   textureUtils
 } from "./webGlUtils"
 
-const { makeCheckerTexture } = textureUtils
+const { makeCheckerTexture, makeImgTexture } = textureUtils
 
 
 const vertexShaderSource = `#version 300 es
@@ -70,7 +70,7 @@ const fragmentShaderSource = `#version 300 es
   void main() {
     vec4 u_lightColor = vec4( 1, 1, 1, 1 ); // - - - - - - - - - - - - - - - - - - TO REWRITE
 
-    vec4 diffuseColor = vec4( 0, 1, 0, 1 ); //texture( u_diffuse, v_texCoord ); // TO REWRITE
+    vec4 diffuseColor = texture( u_diffuse, v_texCoord );
     vec3 a_normal = normalize( v_normal);
     vec3 surfaceToLight = normalize( v_surfaceToLight );
     vec3 surfaceToView = normalize( v_surfaceToView );
@@ -91,7 +91,7 @@ const fragmentShaderSource = `#version 300 es
   }
 `
 
-function main() {
+async function main() {
   // Get A WebGL context
   /** @type {HTMLCanvasElement} */
   const canvas = document.querySelector( `.gl` )
@@ -121,7 +121,8 @@ function main() {
           translateZ: -200,
           materialUniforms: {
             u_colorMult: [ 1, 1, 1, 1 ],
-            u_diffuse: makeCheckerTexture( gl, `#ff00ff`, `#0000ff` ),
+            // u_diffuse: makeCheckerTexture( gl, `#ff00ff`, `#0000ff` ),
+            u_diffuse: await makeImgTexture( gl, `./tex5.png` ),
             u_specular: [1, 1, 1, 1],
             u_shininess: 150,
             u_specularFactor: 0,
@@ -145,7 +146,7 @@ function main() {
   const vao = createVAOAndSetAttributes( gl, attributes, {
     a_position: { numComponents:3, data:getGeometry() },
     a_normal:   { numComponents:3, data:getNormals() },
-    a_texcoord: { numComponents:2, data:getNormals() }
+    a_texcoord: { numComponents:2, data:getTexcoords() }
   } )
 
   objects[ 0 ].vertexArray = vao
@@ -234,7 +235,9 @@ function main() {
       gl.uniform3fv( uniforms.u_viewWorldPosition, camera.data )
 
       for ( const { materialUniforms, translateX:x=0, translateY:y=0, translateZ:z=0 } of instances ) {
-        const world = new Matrix4( matrices.world ).translate( x + angle, y, z )
+        const world = new Matrix4( matrices.world )
+          .translate( x + translateX, y, z )
+          .rotateX( degToRad( rotateX ) )
         const worldViewProjection = new Matrix4( matrices.worldViewProjection ).multiply( world )
         const worldInverseTranspose = new Matrix4( new Matrix4( world ).inverse() ).transpose()
 
@@ -247,13 +250,12 @@ function main() {
         gl.uniform4fv( uniforms.u_specular, materialUniforms.u_specular )
         gl.uniform1f( uniforms.u_specularFactor, materialUniforms.u_specularFactor )
 
-        // gl.activeTexture( gl.TEXTURE0 );
-        // gl.bindTexture( gl.TEXTURE_2D, materialUniforms.u_diffuse );
-        // gl.uniform1i( uniforms.u_diffuse, 0 );
+        gl.activeTexture( gl.TEXTURE0 );
+        gl.bindTexture( gl.TEXTURE_2D, materialUniforms.u_diffuse );
+        gl.uniform1i( uniforms.u_diffuse, 0 );
 
         gl.drawArrays( gl.TRIANGLES, 0, count )
       }
-
     }
   }
   function draw() {
@@ -326,23 +328,28 @@ function main() {
   }
 
   setInterval( () => {
-    angle += incrementator
+    translateX += incrementator
+    rotateX += incrementator * 1
 
-    if ( Math.abs( angle ) > 500 )
+    if ( Math.abs( translateX ) > 250 )
       incrementator *= -1
 
     drawScene2()
   }, 10 )
 }
 
-let incrementator = 2
-let angle = 0
+let incrementator = .5
+let translateX = 0
+let rotateX = 0
 let count = 0
 const myData = true
 const getGeometry = myData  ?  myGeo  :  notMyGeo
 const getNormals = myData  ?  myNormals  :  notMyNormals
+const getTexcoords = myData  ?  myTexcoords  :  notMyTexcoords
+const getColors = myData  ?  myColors  :  notMyColors
+const getTexture = myData  ?  myTexture  :  notMyTexture
 
-const camera = new Vector3( [0, 0, 400] );
+const camera = new Vector3( [0, 0, 100] );
 const target = new Vector3( [0, 0, 0] );
 const up = new Vector3( [0, 1, 0] );
 
@@ -363,6 +370,7 @@ let normals = new Float32Array( [
   0, 0, 1
 ] )
 let texCoords
+let texture
 
 const myModels = {
   cube: {
@@ -418,15 +426,22 @@ const myModels = {
   }
 }
 
-loadTheModel( `./barrel.obj` ).then( models => {
-  const model = models[ 0 ].glData
+loadTheModel( `./barrel.obj` ).then( async models => {
+  const model = models[ 0 ].data
   // const model = myModels.cube
 
   console.log( models[ 0 ] )
 
   positions = new Float32Array( model.vertices )
   normals = new Float32Array( model.normals )
-  // texCoords = new Float32Array( model. )
+  texCoords = new Float32Array( model.textureCoords )
+  texture = await ( () => {
+    return new Promise( res => {
+      const img = new Image
+      img.src = `./UVMap.png`
+      img.onload = () => res( img )
+    })
+  } )()
 
   main()
 } )
@@ -454,10 +469,18 @@ function myGeo(gl) {
   return positions
   gl.bufferData( gl.ARRAY_BUFFER, positions, gl.STATIC_DRAW )
 }
-
 function myNormals(gl) {
   return normals
   gl.bufferData( gl.ARRAY_BUFFER, normals, gl.STATIC_DRAW )
+}
+function myTexcoords() {
+  return texCoords
+}
+function myColors() {
+
+}
+function myTexture() {
+  return tex
 }
 
 
@@ -624,7 +647,6 @@ function notMyGeo(gl) {
   count = positions.length / 3
   gl.bufferData(gl.ARRAY_BUFFER, positions, gl.STATIC_DRAW);
 }
-
 function notMyNormals(gl) {
   var normals = new Float32Array([
           // left column front
@@ -756,4 +778,10 @@ function notMyNormals(gl) {
           -1, 0, 0,
       ]);
   gl.bufferData(gl.ARRAY_BUFFER, normals, gl.STATIC_DRAW);
+}
+function notMyTexcoords() {
+
+}
+function notMyColors() {
+
 }

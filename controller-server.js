@@ -91,6 +91,8 @@ class Server {
     else {
       path += address
 
+      // console.log( address, request.headers.referer )
+
       if ( !/^.*\.\w+$/.test( address ) && !fs.existsSync( path ) )
         switch ( request.headers.referer.match( /^.*\.(\w+)$/ )[ 1 ] ) {
           case `js`:

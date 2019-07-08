@@ -1,13 +1,14 @@
 export const textureUtils = ( () => {
-  const ctx = document.createElement( `canvas` ).getContext( `2d` )
+  const canvas = document.createElement( `canvas` )
+  const ctx = canvas.getContext( `2d` )
 
   /** Set canvas width and height
    * @param {Number} width
    * @param {Number} [height] By default height = width
    */
   function resizeCanvas( width, height=width ) {
-    ctx.canvas.width = width
-    ctx.canvas.height = height
+    canvas.width = width
+    canvas.height = height
   }
 
   /** Create and load texture to WebGL
@@ -19,11 +20,20 @@ export const textureUtils = ( () => {
 
     gl.bindTexture( gl.TEXTURE_2D, tex )
 
-    gl.texImage2D( gl.TEXTURE_2D, 0, gl.RGBA, gl.RGBA, gl.UNSIGNED_BYTE, ctx.canvas )
+    gl.texImage2D( gl.TEXTURE_2D, 0, gl.RGBA, gl.RGBA, gl.UNSIGNED_BYTE, canvas )
     gl.generateMipmap( gl.TEXTURE_2D )
 
     gl.texParameteri( gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.NEAREST )
     gl.texParameteri( gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.NEAREST )
+
+    // gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.REPEAT)
+    // gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.REPEAT)
+
+    // gl.texParameteri( gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.CLAMP_TO_EDGE )
+    // gl.texParameteri( gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.CLAMP_TO_EDGE )
+
+    // gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.MIRRORED_REPEAT);
+    // gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.MIRRORED_REPEAT);
 
     return tex
   }
@@ -40,15 +50,37 @@ export const textureUtils = ( () => {
     ctx.fillStyle = color1
     ctx.fillRect( 0, 0, 2, 2 )
 
-    ctx.fillStyle = color1
+    ctx.fillStyle = color2
     ctx.fillRect( 0, 0, 1, 1 )
     ctx.fillRect( 1, 1, 1, 1 )
 
     return createTexture( gl )
   }
 
+  /**
+   *
+   * @param {WebGLRenderingContext} gl
+   * @param {String} src
+   */
+  async function makeImgTexture( gl, src ) {
+    const img = new Image
+    img.src = src
+
+    await new Promise( res => {
+      img.onload = () => {
+        resizeCanvas( img.width, img.height )
+
+        ctx.drawImage( img, 0, 0 )
+        res()
+      }
+    } )
+
+    return createTexture( gl )
+  }
+
   return {
-    makeCheckerTexture
+    makeCheckerTexture,
+    makeImgTexture
   }
 } )()
 
