@@ -1,89 +1,3 @@
-export const textureUtils = ( () => {
-  const canvas = document.createElement( `canvas` )
-  const ctx = canvas.getContext( `2d` )
-
-  /** Set canvas width and height
-   * @param {Number} width
-   * @param {Number} [height] By default height = width
-   */
-  function resizeCanvas( width, height=width ) {
-    canvas.width = width
-    canvas.height = height
-  }
-
-  /** Create and load texture to WebGL
-   * @deprecated Not rewrited code
-   * @param {WebGLRenderingContext} gl
-   */
-  function createTexture( gl ) {
-    const tex = gl.createTexture()
-
-    gl.bindTexture( gl.TEXTURE_2D, tex )
-
-    gl.texImage2D( gl.TEXTURE_2D, 0, gl.RGBA, gl.RGBA, gl.UNSIGNED_BYTE, canvas )
-    gl.generateMipmap( gl.TEXTURE_2D )
-
-    gl.texParameteri( gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.NEAREST )
-    gl.texParameteri( gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.NEAREST )
-
-    // gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.REPEAT)
-    // gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.REPEAT)
-
-    // gl.texParameteri( gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.CLAMP_TO_EDGE )
-    // gl.texParameteri( gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.CLAMP_TO_EDGE )
-
-    // gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.MIRRORED_REPEAT);
-    // gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.MIRRORED_REPEAT);
-
-    return tex
-  }
-
-  /**
-   *
-   * @param {WebGLRenderingContext} gl
-   * @param {String} color1
-   * @param {String} color2
-   */
-  function makeCheckerTexture( gl, color1=`#ffffff`, color2=`#000000` ) {
-    resizeCanvas( 2 )
-
-    ctx.fillStyle = color1
-    ctx.fillRect( 0, 0, 2, 2 )
-
-    ctx.fillStyle = color2
-    ctx.fillRect( 0, 0, 1, 1 )
-    ctx.fillRect( 1, 1, 1, 1 )
-
-    return createTexture( gl )
-  }
-
-  /**
-   *
-   * @param {WebGLRenderingContext} gl
-   * @param {String} src
-   */
-  async function makeImgTexture( gl, src ) {
-    const img = new Image
-    img.src = src
-
-    await new Promise( res => {
-      img.onload = () => {
-        resizeCanvas( img.width, img.height )
-
-        ctx.drawImage( img, 0, 0 )
-        res()
-      }
-    } )
-
-    return createTexture( gl )
-  }
-
-  return {
-    makeCheckerTexture,
-    makeImgTexture
-  }
-} )()
-
 /** Class of 4x4 matrix - X Y Z W
  */
 export class Matrix4 {
@@ -501,100 +415,6 @@ export class Vector3 {
     return this
   }
 }
-/** Create WebGL shader from source
- * @param {WebGLRenderingContext} gl
- * @param {WebGLRenderingContextBase} type gl.VERTEX_SHADER or gl.FRAGMENT_SHADER
- * @param {String} source
- */
-export function createShader( gl, type, source ) {
-  const shader = gl.createShader( type )
-
-  gl.shaderSource( shader, source )
-  gl.compileShader( shader )
-
-  return shader
-}
-/** Create WebGL program from shaders
- * @param {WebGLRenderingContext} gl
- * @param {WebGLShader|String} vertexShader Shader or source code
- * @param {WebGLShader|String} fragmentShader Shader or source code
- */
-export function createProgram( gl, vertexShader, fragmentShader ) {
-  const program = gl.createProgram()
-
-  vertexShader   = typeof vertexShader   == `string`  ?  createShader( gl, gl.VERTEX_SHADER, vertexShader )      :  vertexShader
-  fragmentShader = typeof fragmentShader == `string`  ?  createShader( gl, gl.FRAGMENT_SHADER, fragmentShader )  :  fragmentShader
-
-  gl.attachShader( program, vertexShader )
-  gl.attachShader( program, fragmentShader )
-
-  gl.linkProgram( program )
-
-  if( !gl.getProgramParameter( program, gl.LINK_STATUS ) )
-    throw `Could not compile WebGL program.\n  ${gl.getProgramInfoLog( program )}`
-
-  return program
-}
-/** Get webgl program uniforms
- * @param {WebGLRenderingContext} gl
- * @param {WebGLProgram} program
- */
-export function getActiveUniforms( gl, program ) {
-  const numUniforms = gl.getProgramParameter( program, gl.ACTIVE_UNIFORMS )
-  const uniforms = {}
-
-  for ( let i = 0;  i < numUniforms;  ++i ) {
-    const info = gl.getActiveUniform( program, i );
-
-    uniforms[ info.name ] = gl.getUniformLocation( program, info.name )
-  }
-
-  return uniforms
-}
-/** Get webgl program attributes
- * @param {WebGLRenderingContext} gl
- * @param {WebGLProgram} program
- */
-export function getActiveAttributes( gl, program ) {
-  const numUniforms = gl.getProgramParameter(program, gl.ACTIVE_ATTRIBUTES )
-  const attributes = {}
-
-  for ( let i = 0;  i < numUniforms;  ++i ) {
-    const info = gl.getActiveAttrib( program, i );
-
-    attributes[ info.name ] = gl.getAttribLocation( program, info.name )
-  }
-
-  return attributes
-}
-/** Create vertex attributes object and set attributes data in buffers
- * @param {WebGLRenderingContext} gl
- * @param {*} attributesPos WebGl attributes positions
- * @param {{ numComponents:Number, data:Number[] }} attributes
- */
-export function createVAOAndSetAttributes( gl, attributesPos, attributes ) {
-  const vao = gl.createVertexArray()
-
-  gl.bindVertexArray( vao )
-
-  for ( const attribute in attributes ) {
-    const attr = attributes[ attribute ]
-    const attrPos = attributesPos[ attribute ]
-    const buffer = gl.createBuffer()
-
-    gl.enableVertexAttribArray( attrPos )
-    gl.bindBuffer( gl.ARRAY_BUFFER, buffer )
-    gl.bufferData( gl.ARRAY_BUFFER, attr.data, gl.STATIC_DRAW )
-
-    const type = gl.FLOAT   // the data is 32bit floats
-    const normalize = false // don't normalize the data
-    const stride = 0        // 0 = move forward size * sizeof(type) each iteration to get the next position
-    const offset = 0        // start at the beginning of the buffer
-    gl.vertexAttribPointer( attrPos, attr.numComponents, type, normalize, stride, offset)
-  }
-
-  return vao
-}
 /** Create matrices
  * @param {Object} param0
  * @param {Vector3} param0.camera
@@ -606,8 +426,8 @@ export function createVAOAndSetAttributes( gl, attributesPos, attributes ) {
  * @param {Number} param0.zFar
  */
 export function createMatrices( {
-  camera: cam,
-  target,
+  cameraPosition,
+  targetPosition,
   up,
   fieldOfViewRadians,
   aspect,
@@ -617,7 +437,7 @@ export function createMatrices( {
   worldRotateY
 } ) {
   const projection = new Matrix4().setPerspective( fieldOfViewRadians, aspect, zNear, zFar )
-  const camera = new Matrix4().lookAt( cam, target, up )
+  const camera = new Matrix4().lookAt( cameraPosition, targetPosition, up )
   const view = new Matrix4( camera ).inverse()
   const viewProjection = new Matrix4( projection ).multiply( view )
 
@@ -638,3 +458,627 @@ export function createMatrices( {
     worldViewProjection
   }
 }
+/** Namespace for textures functions
+ */
+export class Texture {
+  /** Set canvas width and height
+   * @param {Number} width
+   * @param {Number} [height] By default height = width
+   */
+  static _resizeCanvas( width, height=width ) {
+    this._canvas.width = width
+    this._canvas.height = height
+  }
+
+  /** Create and load texture to WebGL
+   * @param {WebGLRenderingContext} gl
+   */
+  static _createTexture( gl ) {
+    const tex = gl.createTexture()
+
+    gl.bindTexture( gl.TEXTURE_2D, tex )
+
+    gl.texImage2D( gl.TEXTURE_2D, 0, gl.RGBA, gl.RGBA, gl.UNSIGNED_BYTE, this._canvas )
+    gl.generateMipmap( gl.TEXTURE_2D )
+
+    gl.texParameteri( gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.NEAREST )
+    gl.texParameteri( gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.NEAREST )
+
+    return tex
+  }
+
+  /** Create texture from 1 color
+   * @param {WebGLRenderingContext} gl
+   * @param {String} color
+   */
+  static createColor( gl, color ) {
+    const ctx = this._ctx
+
+    this._resizeCanvas( 1 )
+
+    ctx.fillStyle = color
+    ctx.fillRect( 0, 0, 1, 1 )
+
+    return this._createTexture( gl )
+  }
+
+  /** Create checker texture
+   * @param {WebGLRenderingContext} gl
+   * @param {String} color1
+   * @param {String} color2
+   */
+  static createChecker( gl, color1=`#ffffff`, color2=`#000000` ) {
+    const ctx = this._ctx
+
+    this._resizeCanvas( 2 )
+
+    ctx.fillStyle = color1
+    ctx.fillRect( 0, 0, 2, 2 )
+
+    ctx.fillStyle = color2
+    ctx.fillRect( 0, 0, 1, 1 )
+    ctx.fillRect( 1, 1, 1, 1 )
+
+    return this._createTexture( gl )
+  }
+
+  /** Create texture from image
+   * @param {WebGLRenderingContext} gl
+   * @param {String} src
+   */
+  static async createFromImg( gl, src ) {
+    const img = new Image
+    img.src = src
+
+    await new Promise( res => {
+      img.onload = () => {
+        this._resizeCanvas( img.width, img.height )
+        this._ctx.drawImage( img, 0, 0 )
+
+        res()
+      }
+    } )
+
+    return this._createTexture( gl )
+  }
+}
+Texture._canvas = document.createElement( `canvas` )
+Texture._ctx = Texture._canvas.getContext( `2d` )
+
+/** Namespace for .obj models loader and for its instances class and for primitives
+ */
+export class Model {
+  /** Constructor
+   * @param {String} url
+   */
+  constructor( url ) {
+    this.name = url
+
+    this.data = {
+      texture: new Image,
+      /** @type {Float32Array} */
+      textureCoords: [],
+      /** @type {Float32Array} */
+      vertices: [],
+      /** @type {Float32Array} */
+      normals: [],
+      /** @type {Float32Array} */
+      indices: [],
+      /** @type {Float32Array} */
+      colors: []
+    }
+    this.info = {
+      textureCoords: 0,
+      multiplier: 0,
+      vertices: 0,
+      normals: 0,
+      faces: 0,
+      indices: 0
+    }
+  }
+
+  /** Asynchronous model constructor
+   */
+  static async create( src ) {
+    const model = new Model( src )
+    const canvas = document.createElement( `canvas` )
+    const ctx = canvas.getContext( `2d` )
+    const pathToOBJ = model.name
+    const readTheFile = this.readTheFile
+    const pathToOBJFolder = pathToOBJ.match( /(.*\/)/ )[ 1 ]
+
+    const materials = new Map
+    const textureCoords = []
+    const vertices = []
+    const normals = []
+    const facesElements = []
+    const faces = []
+
+    let activeMaterial
+    let biggestVert = 0
+    let currentMtl
+
+    for await ( let [ prefix, value ] of this.readFile( pathToOBJ ) )
+      switch ( prefix ) {
+        case `v`: { // vertice
+          vertices.push( value
+            .split( / /g )
+            .map( coord => {
+              coord = +coord
+
+              if ( coord > biggestVert )
+                biggestVert = coord
+
+              return coord
+            } )
+          )
+        } break
+        case `vn`: { // vertice normal
+          normals.push( value
+            .split( / /g )
+            .map( coord => +coord )
+          )
+        } break
+        case `vt`: { // vertice texture cords
+          textureCoords.push( value
+            .split( / /g )
+            .map( coord => +coord )
+          )
+        } break
+        case `f`: { // face
+          if ( !activeMaterial ) {
+            activeMaterial = materials
+              .set( `undefined`, new this.Material )
+              .get( `undefined` )
+          }
+
+          let texWidth = activeMaterial.kdMap.width  ||  1
+          let texHeight = activeMaterial.kdMap.height  ||  1
+          let texColors = activeMaterial.kdMap.data.length  ?  activeMaterial.kdMap.data  : [ activeMaterial.kd ]
+          let faceElements = value.split( / /g )
+
+          faces.push( faceElements )
+
+          faceElements
+          .reduce( (faceElements, element, index, array) => {
+            if ( index > 2 ) {
+              faceElements.push( array[ 0 ] )
+              faceElements.push( array[ index - 1 ] )
+            }
+
+            faceElements.push( element )
+
+            return faceElements
+          }, [] )
+          .forEach( element => {
+            if ( !faces.includes( element ) ) {
+              facesElements.push( element )
+              let nums = element.match( /(?<vertex>\d+)\/(?:(?<texture>\d+))?\/?(?<normal>\d+)/ ).groups
+
+              nums.color = [
+                textureCoords[ nums.texture - 1 ][ 0 ] * texWidth,
+                textureCoords[ nums.texture - 1 ][ 1 ] * texHeight
+              ].map( pos => {
+                let i = 1
+
+                while ( pos > i )
+                  i++
+
+                return i - 1
+              } ).reduce( (x, y) => x + y * texWidth )
+
+              model.data.textureCoords.push( ...textureCoords[ nums.texture - 1 ] )
+              model.data.vertices.push( ...vertices[ nums.vertex - 1 ].map( coord => coord / biggestVert ) )
+              model.data.normals.push( ...normals[ nums.normal - 1 ] )
+              model.data.colors.push( ...texColors[ nums.color ] )
+            }
+
+            model.data.indices.push( facesElements.indexOf( element ) )
+          } )
+        } break
+        case `usemtl`: { // use material
+          activeMaterial = materials.get( value )
+        } break
+        case `mtllib`: { // fetch .mtl file
+          for await ( let [ mtlPrefix, mtlValue ] of this.readFile( `${pathToOBJFolder}${value}` ) ) {
+            switch ( mtlPrefix ) {
+              case `newmtl`: {
+                currentMtl = materials
+                  .set( mtlValue, new this.Material )
+                  .get( mtlValue )
+              } break
+              case 'Kd': {
+                currentMtl.kd = mtlValue
+                  .split( / /g )
+                  .map( coord => +coord )
+              } break
+              case 'map_Kd': {
+                const image = await new Promise( resolve => {
+                  const image = new Image
+
+                  image.src = `${pathToOBJFolder}${mtlValue}`
+                  image.onload = () => resolve( image )
+                } )
+
+                canvas.width = currentMtl.mapKd.width = image.width
+                canvas.height = currentMtl.mapKd.height = image.height
+
+                ctx.drawImage( image, 0, 0 )
+
+                const imageData = ctx.getImageData( 0, 0, image.width, image.height )
+
+                for ( const pixels = imageData.data, i = 0;  i < pixels.length;  i += 4 )
+                  currentMtl.mapKd.data.push( [
+                    pixels[ i + 0 ] / 255 * currentMtl.kd[ 0 ],
+                    pixels[ i + 1 ] / 255 * currentMtl.kd[ 1 ],
+                    pixels[ i + 2 ] / 255 * currentMtl.kd[ 2 ],
+                  ] )
+              } break
+            }
+          }
+        } break
+      }
+
+    model.info.multiplier = biggestVert
+    model.info.textureCoords = textureCoords.length
+    model.info.vertices = vertices.length
+    model.info.normals = normals.length
+    model.info.faces = faces.length
+    model.info.indices = model.data.indices.length
+
+    model.data.textureCoords = new Float32Array( model.data.textureCoords )
+    model.data.vertices = new Float32Array( model.data.vertices )
+    model.data.normals = new Float32Array( model.data.normals )
+    model.data.indices = new Float32Array( model.data.indices )
+
+    const matrix = new Matrix4().translate( .5, .5, 0 ).rotateX( Math.PI ).translate( -.5, -.5, 0 )
+    const texCoords = model.data.textureCoords
+    for ( let i = 0; i < texCoords.length; i += 2 ) {
+      const vector = new Vector3( texCoords[ i + 0 ], texCoords[ i + 1 ], 0 ).transformByMatrix( matrix )
+
+      texCoords[ i + 0 ] = vector.data[ 0 ]
+      texCoords[ i + 1 ] = vector.data[ 1 ]
+    }
+
+    return model
+  }
+
+  /** `.obj` and `.mtl` files reader
+   * @param {String} path
+   */
+  static async * readFile( path ) {
+    const rawObj = await fetch( path ).then( file => file.text() )
+    const lines = rawObj
+      .split( /\r?\n/g )
+      .filter( element => element )
+      .map( element => element.trim() )
+
+    for ( const line of lines ) {
+      const { prefix, value } = line.match( /^(?<prefix>\S+) +(?<value>.+)$/ ).groups
+
+      yield [ prefix, value ]
+    }
+  }
+}
+Model.Material = class Material {
+  constructor( name ) {
+    this.name = name
+    this.faces = []
+    this.kd = []
+    this.kdMap = { width:0, height:0, data:[] }
+  }
+}
+Model.Instance = class ModelInstance {
+  /** Create classical model for predefined shaders
+   * @param {Object} param0
+   * @param {Number[]} param0.rotate Array with 3 elements (x, y, z)
+   * @param {Number[]} param0.translate Array with 3 elements (rotate by x, y, z axes)
+   * @param {Number[]} param0.lightColor Array with 4 elements (r, g, b, a)
+   * @param {Number[]} param0.colorMult Array with 4 elements (r, g, b, a)
+   * @param {Number[]} param0.specular Array with 4 elements (r, g, b, a)
+   * @param {Number} param0.specularFactor
+   * @param {WebGLTexture} param0.diffuse
+   */
+  constructor( {
+    rotate = [ 0, 0, 0 ],
+    translate = [ 0, 0, 0 ],
+    lightColor = [ 1, 1, 1, 1 ],
+    colorMult = [ 1, 1, 1, 1 ],
+    specular = [1, 1, 1, 1],
+    specularFactor = 0,
+    shininess = 1,
+    diffuse
+  } ) {
+    this.x = translate[ 0 ]
+    this.y = translate[ 1 ]
+    this.z = translate[ 2 ]
+
+    this.rotateX = rotate[ 0 ]
+    this.rotateY = rotate[ 1 ]
+    this.rotateZ = rotate[ 2 ]
+
+    this.materialUniforms = {
+      u_lightColor: lightColor,
+      u_colorMult: colorMult,
+      u_diffuse: diffuse,
+      u_shininess: shininess,
+      u_specular: specular,
+      u_specularFactor: specularFactor
+    }
+  }
+}
+/** Namespace for WebGl program and shaders
+ */
+export class Program {
+  /** Create WebGl program
+   * @param {WebGLRenderingContext} gl
+   * @param {String|WebGLShader} [vertexShader] Vertex shader or its source
+   * @param {String|WebGLShader} [fragmentShader] Fragment shader or its code
+   */
+  constructor( gl, vertexShader=null, fragmentShader=null ) {
+    this.cameraProgram = Program.create( gl, `camera` )
+    this.uniforms = Program.getActiveUniforms( gl, this.cameraProgram )
+    this.gl = gl
+
+    /** @type {Map<String,{modelInfo:Any instances:Model.Instance[] vao:Any }> */
+    this.models = new Map
+  }
+
+  /** Load model and create VAO from it
+   * @param {String} name
+   * @param {Model} model
+   */
+  async loadModel( name, model ) {
+    this.models.set( name, {
+      modelInfo: model.info,
+      instances: [],
+      vao: Program.createVAOAndSetAttributes( this.gl, this.cameraProgram, {
+        a_position: { numComponents:3, data:model.data.vertices },
+        a_normal:   { numComponents:3, data:model.data.normals },
+        a_texcoord: { numComponents:2, data:model.data.textureCoords }
+      } )
+    } )
+  }
+
+  addInstance( name, instance ) {
+    this.models.get( name ).instances.push( instance )
+  }
+
+  addInstances( name, instances ) {
+    for ( const instance of instances )
+      this.models.get( name ).instances.push( instance )
+  }
+
+  draw( lightPosition, cameraPosition, matrices ) {
+    const { gl, models, cameraProgram, uniforms } = this
+
+    gl.viewport( 0, 0, gl.canvas.width, gl.canvas.height )
+    gl.clear( gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT )
+
+    gl.enable( gl.CULL_FACE )
+    gl.enable( gl.DEPTH_TEST )
+
+    gl.useProgram( cameraProgram )
+
+    for ( const { vao, modelInfo, instances } of models.values() ) {
+      gl.bindVertexArray( vao )
+
+      gl.uniform4fv( uniforms.u_color, [ 0.2, 1, 0.2, 1 ] ) // green
+
+      gl.uniform3fv( uniforms.u_lightWorldPosition, lightPosition.data )
+      gl.uniform3fv( uniforms.u_viewWorldPosition, cameraPosition.data )
+
+      for ( const { materialUniforms, x=0, y=0, z=0, rotateX=0, rotateY=0, rotateZ=0 } of instances ) {
+        const world = new Matrix4( matrices.world )
+          .translate( x, y, z )
+          .rotateX( rotateX )
+          .rotateY( rotateY )
+          .rotateZ( rotateZ )
+        const worldViewProjection = new Matrix4( matrices.worldViewProjection ).multiply( world )
+        const worldInverseTranspose = new Matrix4( new Matrix4( world ).inverse() ).transpose()
+
+        gl.uniformMatrix4fv( uniforms.u_worldViewProjection, false, worldViewProjection.data )
+        gl.uniformMatrix4fv( uniforms.u_worldInverseTranspose, false, worldInverseTranspose.data )
+        gl.uniformMatrix4fv( uniforms.u_world, false, world.data )
+
+        gl.uniform1f( uniforms.u_shininess, materialUniforms.u_shininess )
+        gl.uniform4fv( uniforms.u_lightColor, materialUniforms.u_lightColor )
+        gl.uniform4fv( uniforms.u_colorMult, materialUniforms.u_colorMult )
+        gl.uniform4fv( uniforms.u_specular, materialUniforms.u_specular )
+        gl.uniform1f( uniforms.u_specularFactor, materialUniforms.u_specularFactor )
+
+        gl.activeTexture( gl.TEXTURE0 );
+        gl.bindTexture( gl.TEXTURE_2D, materialUniforms.u_diffuse );
+        gl.uniform1i( uniforms.u_diffuse, 0 );
+
+        gl.drawArrays( gl.TRIANGLES, 0, modelInfo.indices )
+      }
+    }
+  }
+
+  /** Create WebGl program
+   * @param {WebGLRenderingContext} gl
+   * @param {String|WebGLShader} typeOrVertexShader Type of program (may be `camera` or `shadow`) or vertex shader or its source
+   * @param {String|WebGLShader} [fragmentShader] Fragment shader or its code
+   */
+  static create( gl, typeOrVertexShader=`camera`, fragmentShader=null ) {
+    const program = gl.createProgram()
+
+    let vShader
+    let fShader
+
+    if ( /camera|shadow/.test( typeOrVertexShader )) {
+      vShader = this.createShader( gl, gl.VERTEX_SHADER, Program[ `${typeOrVertexShader}_vertexShader` ] )
+      fShader = this.createShader( gl, gl.FRAGMENT_SHADER, Program[ `${typeOrVertexShader}_fragmentShader` ] )
+    }
+    else if ( typeOrVertexShader && fragmentShader ) {
+      vShader = typeof vertexShader   == `string`  ?  createShader( gl, gl.VERTEX_SHADER, vertexShader )      :  vertexShader
+      fShader = typeof fragmentShader == `string`  ?  createShader( gl, gl.FRAGMENT_SHADER, fragmentShader )  :  fragmentShader
+    }
+
+    gl.attachShader( program, vShader )
+    gl.attachShader( program, fShader )
+
+    gl.linkProgram( program )
+
+    if( !gl.getProgramParameter( program, gl.LINK_STATUS ) )
+      throw `Could not compile WebGL program.\n  ${gl.getProgramInfoLog( program )}`
+
+    return program
+  }
+
+  /** Create WebGL shader from source
+   * @param {WebGLRenderingContext} gl
+   * @param {WebGLRenderingContextBase} type gl.VERTEX_SHADER or gl.FRAGMENT_SHADER
+   * @param {String} source
+   */
+  static createShader( gl, type, source ) {
+    const shader = gl.createShader( type )
+
+    gl.shaderSource( shader, source )
+    gl.compileShader( shader )
+
+    return shader
+  }
+
+  /** Get webgl program attributes
+   * @param {WebGLRenderingContext} gl
+   * @param {WebGLProgram} program
+   */
+  static getActiveAttributes( gl, program ) {
+    const numUniforms = gl.getProgramParameter(program, gl.ACTIVE_ATTRIBUTES )
+    const attributes = {}
+
+    for ( let i = 0;  i < numUniforms;  ++i ) {
+      const info = gl.getActiveAttrib( program, i );
+
+      attributes[ info.name ] = gl.getAttribLocation( program, info.name )
+    }
+
+    return attributes
+  }
+
+  /** Get webgl program uniforms
+   * @param {WebGLRenderingContext} gl
+   * @param {WebGLProgram} program
+   */
+  static getActiveUniforms( gl, program ) {
+    const numUniforms = gl.getProgramParameter( program, gl.ACTIVE_UNIFORMS )
+    const uniforms = {}
+
+    for ( let i = 0;  i < numUniforms;  ++i ) {
+      const info = gl.getActiveUniform( program, i );
+
+      uniforms[ info.name ] = gl.getUniformLocation( program, info.name )
+    }
+
+    return uniforms
+  }
+
+  /** Create vertex attributes object and set attributes data in buffers
+   * @param {WebGLRenderingContext} gl
+   * @param {WebGLProgram} program
+   * @param {{ numComponents:Number, data:Number[] }} attributes
+   */
+  static createVAOAndSetAttributes( gl, program, attributes ) {
+    const attributesPos = this.getActiveAttributes( gl, program )
+    const vao = gl.createVertexArray()
+
+    gl.bindVertexArray( vao )
+
+    for ( const attribute in attributes ) {
+      const attr = attributes[ attribute ]
+      const attrPos = attributesPos[ attribute ]
+      const buffer = gl.createBuffer()
+
+      gl.enableVertexAttribArray( attrPos )
+      gl.bindBuffer( gl.ARRAY_BUFFER, buffer )
+      gl.bufferData( gl.ARRAY_BUFFER, attr.data, gl.STATIC_DRAW )
+
+      const type = gl.FLOAT   // the data is 32bit floats
+      const normalize = false // don't normalize the data
+      const stride = 0        // 0 = move forward size * sizeof(type) each iteration to get the next position
+      const offset = 0        // start at the beginning of the buffer
+      gl.vertexAttribPointer( attrPos, attr.numComponents, type, normalize, stride, offset)
+    }
+
+    return vao
+  }
+}
+Program.camera_vertexShader = `#version 300 es
+  uniform mat4 u_worldViewProjection;
+  uniform vec3 u_lightWorldPosition;
+  uniform mat4 u_world;
+  uniform mat4 u_viewInverse;
+  uniform mat4 u_worldInverseTranspose;
+
+  in vec4 a_position;
+  in vec3 a_normal;
+  in vec2 a_texcoord;
+
+  out vec4 v_position;
+  out vec2 v_texCoord;
+  out vec3 v_normal;
+  out vec3 v_surfaceToLight;
+  out vec3 v_surfaceToView;
+
+  void main() {
+    v_texCoord = a_texcoord;
+    v_position = (u_worldViewProjection * a_position);
+    v_normal = (u_worldInverseTranspose * vec4( a_normal, 0 )).xyz;
+
+    v_surfaceToLight = u_lightWorldPosition - (u_world * a_position).xyz;
+    v_surfaceToView = (u_viewInverse[ 3 ] - (u_world * a_position)).xyz;
+    gl_Position = v_position;
+  }`
+Program.camera_fragmentShader = `#version 300 es
+  precision mediump float;
+
+  in vec4 v_position;
+  in vec2 v_texCoord;
+  in vec3 v_normal;
+  in vec3 v_surfaceToLight;
+  in vec3 v_surfaceToView;
+
+  uniform vec4 u_lightColor;
+  uniform vec4 u_colorMult;
+  uniform sampler2D u_diffuse;
+  uniform vec4 u_specular;
+  uniform float u_shininess;
+  uniform float u_specularFactor;
+
+  out vec4 outColor;
+
+  vec4 lit( float l, float h, float m ) {
+    return vec4(
+      1.0,
+      max( l, 0.0 ),
+      (l > 0.0)  ?  pow( max( 0.0, h ), m )  :  0.0,
+      1.0
+    );
+  }
+
+  void main() {
+    vec4 diffuseColor = texture( u_diffuse, v_texCoord );
+    vec3 a_normal = normalize( v_normal );
+    vec3 surfaceToLight = normalize( v_surfaceToLight );
+    vec3 surfaceToView = normalize( v_surfaceToView );
+    vec3 halfVector = normalize( surfaceToLight + surfaceToView );
+
+    vec4 litR = lit(
+      dot( a_normal, surfaceToLight ),
+      dot( a_normal, halfVector ),
+      u_shininess
+    );
+
+    outColor = vec4(
+      (u_lightColor * (
+        diffuseColor * litR.y * u_colorMult +
+        u_specular * litR.z * u_specularFactor
+      ) ).rgb,
+      diffuseColor.a
+    );
+  }
+`
+Program.VertexShader_shadow = ``
+Program.FragmentShader_shadow = ``
