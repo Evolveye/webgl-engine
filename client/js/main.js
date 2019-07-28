@@ -26,33 +26,49 @@ async function main() {
 
   const programs = new Program( gl )
   const barrel = await Model.create( `./models/barrel.obj` )
+  const prism = Model.createPrism( 1, 1, 1 )
 
-  programs.loadModel( `barrel`, barrel )
-  programs.addInstances( `barrel`, [
+  // programs.loadModel( `barrel`, barrel )
+  programs.loadModel( `prism`, prism )
+  // programs.addInstances( `barrel`, [
+  //   new Model.Instance( {
+  //     translate: [ -2, -2, 0 ],
+  //     lightColor: [ 1, 1, 1, 1 ],
+  //     colorMult: [ 1, 1, 1, 1 ],
+  //     diffuse: await Texture.createFromImg( gl, `./models/barrel.png` ),
+  //     specular: [1, 1, 1, 1],
+  //     shininess: 1,
+  //     specularFactor: 0,
+  //   } ),
+  //   new Model.Instance( {
+  //     // translate: [ 2, 0, 0 ],
+  //     rotate: [ 0, degToRad( -90 ), 0 ],
+  //     lightColor: [ 1, 1, 1, 1 ],
+  //     colorMult: [ 1, 1, 1, 1 ],
+  //     diffuse: await Texture.createFromImg( gl, `./models/barrel.png` ),
+  //     specular: [1, 1, 1, 1],
+  //     shininess: 200,
+  //     specularFactor: 0,
+  //   } )
+  // ] )
+  programs.addInstances( `prism`, [
     new Model.Instance( {
-      translate: [ -2, -2, 0 ],
+      // translate: [ -2, -2, 0 ],
+      rotate: [ -45, 0, 0 ],
       lightColor: [ 1, 1, 1, 1 ],
       colorMult: [ 1, 1, 1, 1 ],
-      diffuse: await Texture.createFromImg( gl, `./models/barrel.png` ),
+      // diffuse: await Texture.createFromImg( gl, `./models/barrel.png` ),
+      diffuse: Texture.createChecker( gl, `red`, `green` ),
       specular: [1, 1, 1, 1],
       shininess: 1,
       specularFactor: 0,
     } ),
-    new Model.Instance( {
-      // translate: [ 2, 0, 0 ],
-      rotate: [ 0, degToRad( -90 ), 0 ],
-      lightColor: [ 1, 1, 1, 1 ],
-      colorMult: [ 1, 1, 1, 1 ],
-      diffuse: await Texture.createFromImg( gl, `./models/barrel.png` ),
-      specular: [1, 1, 1, 1],
-      shininess: 200,
-      specularFactor: 0,
-    } )
   ] )
 
-  const lightPosition = new Vector3( 0, 15, 15 )
-  const cameraPosition = new Vector3( 0, 3, 5 )
-  const targetPosition = new Vector3( 1, 1, 0 )
+
+  const lightPosition = new Vector3( 0, 10, 15 )
+  const cameraPosition = new Vector3( 0, 0, 5 )
+  const targetPosition = new Vector3( 0, 0, 0 )
 
   const draw = () => programs.draw( lightPosition, cameraPosition, createMatrices( {
     cameraPosition, targetPosition,
@@ -64,19 +80,17 @@ async function main() {
 
     aspect: gl.canvas.clientWidth / gl.canvas.clientHeight,
     zNear: 1,
-    zFar: 1000,
-
-    test: camRotateX
+    zFar: 1000
   } ) )
 
+  // setTimeout( () => {
   setInterval( () => {
+    programs.models.get( `prism` ).instances[ 0 ].rotateY += 1
     // translateX += incrementator
     // rotateX += incrementator * 1
 
     // if ( Math.abs( translateX ) > 250 )
     //   incrementator *= -1
-
-    camRotateX += Math.PI / 180
 
     if ( keys[ 37 ] ) {
       camera.data[ 0 ] += -1
@@ -96,7 +110,7 @@ async function main() {
       target.data[ 2 ] += 1
     }
 
-    cameraPosition.data[ 2 ] += cameraMover
+    // cameraPosition.data[ 2 ] += cameraMover
 
     draw()
   }, 10 )

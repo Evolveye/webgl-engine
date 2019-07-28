@@ -551,8 +551,8 @@ export class Model {
   /** Constructor
    * @param {String} url
    */
-  constructor( url ) {
-    this.name = url
+  constructor( name ) {
+    this.name = name
 
     this.data = {
       texture: new Image,
@@ -580,12 +580,12 @@ export class Model {
   /** Asynchronous model constructor
    */
   static async create( src ) {
-    const model = new Model( src )
+    const model = new Model( src.match( /.*\/(.*)\.\w+/ )[ 1 ] )
     const canvas = document.createElement( `canvas` )
     const ctx = canvas.getContext( `2d` )
-    const pathToOBJ = model.name
+    const pathToOBJ = src
     const readTheFile = this.readTheFile
-    const pathToOBJFolder = pathToOBJ.match( /(.*\/)/ )[ 1 ]
+    const pathToOBJFolder = src.match( /(.*\/)/ )[ 1 ]
 
     const materials = new Map
     const textureCoords = []
@@ -743,6 +743,100 @@ export class Model {
     return model
   }
 
+  static createPrism( x, y, z ) {
+    const model = new Model( `Prism` )
+
+    const vertices = new Float32Array( [
+      // back
+      -1, -1, -1,   -1,  1, -1,    1,  1, -1,
+      -1, -1, -1,    1,  1, -1,    1, -1, -1,
+
+      // front
+       1,  1,  1,   -1,  1,  1,   -1, -1,  1,
+       1, -1,  1,    1,  1,  1,   -1, -1,  1,
+
+      // left
+      -1,  1, -1,   -1, -1, -1,   -1, -1,  1,
+      -1,  1,  1,   -1,  1, -1,   -1, -1,  1,
+
+      // right
+       1, -1,  1,    1, -1, -1,    1,  1, -1,
+       1, -1,  1,    1,  1, -1,    1,  1,  1,
+
+      // top
+       1,  1, -1,   -1,  1, -1,   -1,  1,  1,
+       1,  1,  1,    1,  1, -1,   -1,  1,  1,
+
+      // bottom
+      -1, -1, -1,    1, -1, -1,   -1, -1,  1,
+       1, -1, -1,    1, -1,  1,   -1, -1,  1,
+    ] )
+    const normals = new Float32Array( [
+      // back
+       0,  0, -1,   0,  0, -1,   0,  0, -1,
+       0,  0, -1,   0,  0, -1,   0,  0, -1,
+
+      // front
+       0,  0,  1,   0,  0,  1,   0,  0,  1,
+       0,  0,  1,   0,  0,  1,   0,  0,  1,
+
+      // left
+      -1,  0,  0,   -1,  0,  0,   -1,  0,  0,
+      -1,  0,  0,   -1,  0,  0,   -1,  0,  0,
+
+      // right
+       1,  0,  0,   1,  0,  0,   1,  0,  0,
+       1,  0,  0,   1,  0,  0,   1,  0,  0,
+
+      // top
+       0,  1,  0,   0,  1,  0,   0,  1,  0,
+       0,  1,  0,   0,  1,  0,   0,  1,  0,
+
+      // bottom
+       0, -1,  0,   0, -1,  0,   0, -1,  0,
+       0, -1,  0,   0, -1,  0,   0, -1,  0,
+    ] )
+    const textureCoords = new Float32Array( [
+      // back
+      0, 0,  0, 1,  1, 1,
+      0, 0,  1, 1,  1, 0,
+
+      // front
+      1, 1,  0, 1,  0, 0,
+      1, 0,  1, 1,  0, 0,
+
+      // left
+      0, 1,  0, 0,  1, 0,
+      1, 1,  0, 1,  1, 0,
+
+      // right
+      1, 0,  0, 0,  0, 1,
+      1, 0,  0, 1,  1, 1,
+
+      // top
+      1, 0,  0, 0,  0, 1,
+      1, 1,  1, 0,  0, 1,
+
+      // bottom
+      0, 0,  1, 0,  0, 1,
+      1, 0,  1, 1,  0, 1,
+    ] )
+
+    model.info.multiplier = -1
+    model.info.textureCoords = -1
+    model.info.vertices = vertices.length
+    model.info.normals = normals.length
+    model.info.faces = -1
+    model.info.indices = vertices.length / 3
+
+    model.data.textureCoords = textureCoords
+    model.data.vertices = vertices
+    model.data.normals = normals
+    model.data.indices = new Float32Array( new Array( vertices.length / 3 ) )
+
+    return model
+  }
+
   /** `.obj` and `.mtl` files reader
    * @param {String} path
    */
@@ -871,9 +965,9 @@ export class Program {
       for ( const { materialUniforms, x=0, y=0, z=0, rotateX=0, rotateY=0, rotateZ=0 } of instances ) {
         const world = new Matrix4( matrices.world )
           .translate( x, y, z )
-          .rotateX( rotateX )
-          .rotateY( rotateY )
-          .rotateZ( rotateZ )
+          .rotateX( rotateX * Math.PI / 180 )
+          .rotateY( rotateY * Math.PI / 180 )
+          .rotateZ( rotateZ * Math.PI / 180 )
         const worldViewProjection = new Matrix4( matrices.worldViewProjection ).multiply( world )
         const worldInverseTranspose = new Matrix4( new Matrix4( world ).inverse() ).transpose()
 
@@ -1078,6 +1172,8 @@ Program.camera_fragmentShader = `#version 300 es
       ) ).rgb,
       diffuseColor.a
     );
+
+    // outColor = vec4( .2, .8, .2, 1 );
   }
 `
 Program.VertexShader_shadow = ``
