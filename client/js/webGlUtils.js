@@ -803,8 +803,8 @@ export class Model {
     return model
   }
 
-  static createPrism( x, y, z ) {
-    const model = new Model( `Prism` )
+  static createBox( x, y, z ) {
+    const model = new Model( `Box` )
 
     const vertices = new Float32Array( [
       // back
@@ -881,6 +881,18 @@ export class Model {
       0, 0,  1, 0,  0, 1,
       1, 0,  1, 1,  0, 1,
     ] )
+
+    let longestSide = x < y ? y : x
+    longestSide = longestSide < z ? z : longestSide
+
+    const matrix = new Matrix4().scale( x / longestSide, y / longestSide, z / longestSide )
+    for ( let i = 0; i < vertices.length; i += 3 ) {
+      const vector = new Vector3( vertices[ i + 0 ], vertices[ i + 1 ], vertices[ i + 2 ] ).transformByMatrix( matrix )
+
+      vertices[ i + 0 ] = vector.data[ 0 ]
+      vertices[ i + 1 ] = vector.data[ 1 ]
+      vertices[ i + 2 ] = vector.data[ 2 ]
+    }
 
     model.info.multiplier = -1
     model.info.textureCoords = -1
@@ -1176,23 +1188,31 @@ export default class Renderer {
       zFar: 1000
     } )
   }
-
-  /** Load model, create its VAO, and load it to renderer storage
-   * @param {string} name
-   * @param {string} urlToObj
-   */
-  async loadModel( name, urlToObj ) {
-    const model = await Model.create( urlToObj )
-
+  /** Load model to renderer storage */
+  _loadModel( name, model ) {
     this.models.set( name, {
       modelInfo: model.info,
       instances: [],
       vao: Program.createVAOAndSetAttributes( this.gl, this.cameraProgram, {
+        a_texcoord: { numComponents:2, data:model.data.textureCoords },
         a_position: { numComponents:3, data:model.data.vertices },
-        a_normal:   { numComponents:3, data:model.data.normals },
-        a_texcoord: { numComponents:2, data:model.data.textureCoords }
+        a_normal:   { numComponents:3, data:model.data.normals }
       } )
     } )
+  }
+
+  /** Create model, create its VAO, and load it to renderer storage
+   * @param {string} name
+   * @param {string} urlToObj
+   */
+  async loadModel( name, urlToObj ) {
+    this._loadModel( name, await Model.create( urlToObj ) )
+  }
+  /** Load primitive it to renderer storage
+   * @param {"box"} nameOfPrimitive
+   */
+  loadBox( name, x, y=x, z=x ) {
+    this._loadModel( name, Model.createBox( x, y, z ) )
   }
   /** Create texture from image and load it to renderer storage
    * @param {string} name
@@ -1237,11 +1257,11 @@ export default class Renderer {
   setCameraPos( x, y, z ) {
     const { gl, uniforms, cameraProgram } = this
 
-    gl.useProgram( cameraProgram )
-    gl.uniform3fv( uniforms.u_viewWorldPosition, this._cameraPos.data )
-
     this._cameraPos = new Vector3( x, y, z )
     this._rebuildMatrices()
+
+    gl.useProgram( cameraProgram )
+    gl.uniform3fv( uniforms.u_viewWorldPosition, this._cameraPos.data )
   }
   /** Set the target position
    * @param {number} x
@@ -1260,11 +1280,12 @@ export default class Renderer {
   setPointLightPos( x, y, z ) {
     const { gl, uniforms, cameraProgram } = this
 
+    this._pointLightPos = new Vector3( x, y, z )
+    this._rebuildMatrices()
+
     gl.useProgram( cameraProgram )
     gl.uniform3fv( uniforms.u_lightWorldPosition, this._pointLightPos.data )
 
-    this._pointLightPos = new Vector3( x, y, z )
-    this._rebuildMatrices()
   }
   /** Set the "up" vector
    * @param {number} x
@@ -1290,6 +1311,9 @@ export default class Renderer {
     this._rebuildMatrices()
   }
 
+  /** Active the texture
+   * @param {string} name
+   */
   useTexture( name ) {
     const { gl, uniforms, cameraProgram, textures } = this
 
@@ -1299,6 +1323,9 @@ export default class Renderer {
     gl.bindTexture( gl.TEXTURE_2D, textures.get( name ) );
     gl.uniform1i( uniforms.u_diffuse, 0 );
   }
+  /** Active the material
+   * @param {string} name
+   */
   useMaterial( name ) {
     const { gl, uniforms, cameraProgram, materials } = this
     const material = materials.get( name )
@@ -1314,7 +1341,7 @@ export default class Renderer {
 
   draw( modelName, { x=0, y=0, z=0, rX=0, rY=0, rZ=0 }={} ) {
     const { gl, _matrices, models, cameraProgram, uniforms } = this
-    const { vao, modelInfo, instances } = models.get( modelName )
+    const { vao, modelInfo } = models.get( modelName )
     const world = new Matrix4( _matrices.world )
       .translate( x, y, z )
       .rotateX( degToRad( rX ) )
@@ -1325,7 +1352,6 @@ export default class Renderer {
 
     gl.useProgram( cameraProgram )
     gl.bindVertexArray( vao )
-
 
     gl.uniformMatrix4fv( uniforms.u_worldViewProjection, false, worldViewProjection.data )
     gl.uniformMatrix4fv( uniforms.u_worldInverseTranspose, false, worldInverseTranspose.data )
