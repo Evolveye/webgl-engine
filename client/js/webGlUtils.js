@@ -1,3 +1,7 @@
+export function degToRad( v ) {
+  return v * Math.PI / 180
+}
+
 /** Class of 4x4 matrix - X Y Z W
  */
 export class Matrix4 {
@@ -420,7 +424,7 @@ export class Vector3 {
  * @param {Vector3} param0.camera
  * @param {Vector3} param0.target
  * @param {Vector3} param0.up
- * @param {Number} param0.fieldOfViewRadians
+ * @param {Number} param0.fieldOfViewRadians In degress
  * @param {Number} param0.aspect
  * @param {Number} param0.zNear
  * @param {Number} param0.zFar
@@ -433,15 +437,19 @@ export function createMatrices( {
   aspect,
   zNear,
   zFar,
-  worldRotateX,
-  worldRotateY
+  worldRotateX = 0,
+  worldRotateY = 0,
+  worldRotateZ = 0
 } ) {
-  const projection = new Matrix4().setPerspective( fieldOfViewRadians, aspect, zNear, zFar )
+  const projection = new Matrix4().setPerspective( degToRad( fieldOfViewRadians ), aspect, zNear, zFar )
   const camera = new Matrix4().lookAt( cameraPosition, targetPosition, up )
   const view = new Matrix4( camera ).inverse()
   const viewProjection = new Matrix4( projection ).multiply( view )
 
-  const world = new Matrix4().rotateX( worldRotateX ).rotateY( worldRotateY )
+  const world = new Matrix4()
+    .rotateX( degToRad( worldRotateX ) )
+    .rotateY( degToRad( worldRotateY ) )
+    .rotateY( degToRad( worldRotateZ ) )
   const worldInverse = new Matrix4( world ).inverse()
   const worldInverseTranspose = new Matrix4( worldInverse ).transpose()
   const worldViewProjection = new Matrix4( viewProjection ).multiply( world )
@@ -483,6 +491,8 @@ export class Texture {
 
     gl.texParameteri( gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.NEAREST )
     gl.texParameteri( gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.NEAREST )
+
+    gl.bindTexture( gl.TEXTURE_2D, null )
 
     return tex
   }
@@ -903,30 +913,65 @@ Model.Instance = class ModelInstance {
 }
 /** Namespace for WebGl program and shaders
  */
-export class Program {
+export class Renderer {
   /** Create WebGl program
    * @param {WebGLRenderingContext} gl
    * @param {String|WebGLShader} [vertexShader] Vertex shader or its source
    * @param {String|WebGLShader} [fragmentShader] Fragment shader or its code
    */
   constructor( gl, vertexShader=null, fragmentShader=null ) {
-    this.cameraProgram = Program.create( gl, `camera` )
-    this.uniforms = Program.getActiveUniforms( gl, this.cameraProgram )
+    this.cameraProgram = Renderer.create( gl, `camera` )
+    this.uniforms = Renderer.getActiveUniforms( gl, this.cameraProgram )
     this.gl = gl
+
+    gl.enable( gl.CULL_FACE )
+    gl.enable( gl.DEPTH_TEST )
+    gl.clear( gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT )
+    gl.viewport( 0, 0, gl.canvas.width, gl.canvas.height )
+
+    let canvas = document.body.querySelector( `canvas` )
+
+    this._fov = 60
+    this._upVector = new Vector3( 0, 1, 0 )
+    this._cameraPos = new Vector3( 0, 1, 2 )
+    this._targetPos = new Vector3( 0, 0, 0 )
+    this._pointLightPos = new Vector3( 0, 1, 2 )
+    this._aspect = canvas.clientWidth / canvas.clientHeight
 
     /** @type {Map<String,{modelInfo:Any instances:Model.Instance[] vao:Any }> */
     this.models = new Map
+    /** @type {Map<string,Renderer.Material} */
+    this.materials = new Map
+    /** @type {Map<string,WebGLTexture} */
+    this.textures = new Map
+
+    this._matrices = null
+  }
+
+  _rebuildMatrices() {
+    this._matrices = createMatrices( {
+      cameraPosition: this._cameraPos,
+      targetPosition: this._targetPos,
+      fieldOfViewRadians: this._fov,
+      up: this._upVector,
+
+      aspect: this._aspect,
+      zNear: 1,
+      zFar: 1000
+    } )
   }
 
   /** Load model and create VAO from it
    * @param {String} name
    * @param {Model} model
    */
-  async loadModel( name, model ) {
+  async loadModel( name, urlToObj ) {
+    const model = await Model.create( urlToObj )
+
     this.models.set( name, {
       modelInfo: model.info,
       instances: [],
-      vao: Program.createVAOAndSetAttributes( this.gl, this.cameraProgram, {
+      vao: Renderer.createVAOAndSetAttributes( this.gl, this.cameraProgram, {
         a_position: { numComponents:3, data:model.data.vertices },
         a_normal:   { numComponents:3, data:model.data.normals },
         a_texcoord: { numComponents:2, data:model.data.textureCoords }
@@ -934,56 +979,133 @@ export class Program {
     } )
   }
 
+  setCameraPos( x, y, z ) {
+    const { gl, uniforms, cameraProgram } = this
+
+    gl.useProgram( cameraProgram )
+    gl.uniform3fv( uniforms.u_viewWorldPosition, this._cameraPos.data )
+
+    this._cameraPos = new Vector3( x, y, z )
+    this._rebuildMatrices()
+  }
+  setTargetPos( x, y, z ) {
+    this._targetPos = new Vector3( x, y, z )
+    this._rebuildMatrices()
+  }
+  setPointLightPos( x, y, z ) {
+    const { gl, uniforms, cameraProgram } = this
+
+    gl.useProgram( cameraProgram )
+    gl.uniform3fv( uniforms.u_lightWorldPosition, this._pointLightPos.data )
+
+    this._pointLightPos = new Vector3( x, y, z )
+    this._rebuildMatrices()
+  }
+  setUpVector( x, y, z ) {
+    this._upVector = new Vector3( x, y, z )
+    this._rebuildMatrices()
+  }
+  setAspect( value ) {
+    this._aspect = value
+    this._rebuildMatrices()
+  }
+  setFieldOfView( value ) {
+    this._fieldOfView = value
+    this._rebuildMatrices()
+  }
+  /**
+   * @param {string} name
+   * @param {object} param1
+   * @param {number[]} param1.lightColor
+   * @param {number[]} param1.colorMult
+   * @param {number[]} param1.specular
+   * @param {number} param1.specularFactor
+   * @param {number} param1.shininess
+   */
+  createMaterial( name, materialInfo ) {
+    this.materials.set( name, new Renderer.Material( name, materialInfo ) )
+  }
+  async createTextureImg( name, urlToImage ) {
+    this.textures.set( name, await Texture.createFromImg( this.gl, urlToImage ) )
+  }
+  createTextureColor( name, color ) {
+    this.textures.set( name, Texture.createColor( this.gl, color ) )
+  }
+  createTextureChecker( name, color1, color2 ) {
+    this.textures.set( name, Texture.createChecker( this.gl, color1, color2 ) )
+  }
+
+  useTexture( name ) {
+    const { gl, uniforms, cameraProgram, textures } = this
+
+    gl.useProgram( cameraProgram )
+
+    gl.activeTexture( gl.TEXTURE0 );
+    gl.bindTexture( gl.TEXTURE_2D, textures.get( name ) );
+    gl.uniform1i( uniforms.u_diffuse, 0 );
+  }
+  useMaterial( name ) {
+    const { gl, uniforms, cameraProgram, materials } = this
+    const material = materials.get( name )
+
+    gl.useProgram( cameraProgram )
+
+    gl.uniform1f( uniforms.u_shininess, material.shininess )
+    gl.uniform4fv( uniforms.u_lightColor, material.lightColor )
+    gl.uniform4fv( uniforms.u_colorMult, material.colorMult )
+    gl.uniform4fv( uniforms.u_specular, material.specular )
+    gl.uniform1f( uniforms.u_specularFactor, material.specularFactor )
+  }
+
   addInstance( name, instance ) {
     this.models.get( name ).instances.push( instance )
   }
-
   addInstances( name, instances ) {
     for ( const instance of instances )
       this.models.get( name ).instances.push( instance )
   }
 
-  draw( lightPosition, cameraPosition, matrices ) {
-    const { gl, models, cameraProgram, uniforms } = this
+  draw( modelName, { x=0, y=0, z=0, rX=0, rY=0, rZ=0 }={} ) {
+    const { gl, _matrices, models, cameraProgram, uniforms } = this
+    const { vao, modelInfo, instances } = models.get( modelName )
+    const world = new Matrix4( _matrices.world )
+      .translate( x, y, z )
+      .rotateX( degToRad( rX ) )
+      .rotateY( degToRad( rY ) )
+      .rotateZ( degToRad( rZ ) )
+    const worldViewProjection = new Matrix4( _matrices.worldViewProjection ).multiply( world )
+    const worldInverseTranspose = new Matrix4( new Matrix4( world ).inverse() ).transpose()
 
-    gl.viewport( 0, 0, gl.canvas.width, gl.canvas.height )
-    gl.clear( gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT )
+    gl.useProgram( cameraProgram )
+    gl.bindVertexArray( vao )
 
-    gl.enable( gl.CULL_FACE )
-    gl.enable( gl.DEPTH_TEST )
+
+    gl.uniformMatrix4fv( uniforms.u_worldViewProjection, false, worldViewProjection.data )
+    gl.uniformMatrix4fv( uniforms.u_worldInverseTranspose, false, worldInverseTranspose.data )
+    gl.uniformMatrix4fv( uniforms.u_world, false, world.data )
+
+    gl.drawArrays( gl.TRIANGLES, 0, modelInfo.indices )
+  }
+  drawTemp( modelName, { x, y, z, rX, rY, rZ }={} ) {
+    const { gl, _matrices, models, cameraProgram, uniforms } = this
 
     gl.useProgram( cameraProgram )
 
     for ( const { vao, modelInfo, instances } of models.values() ) {
       gl.bindVertexArray( vao )
 
-      gl.uniform4fv( uniforms.u_color, [ 0.2, 1, 0.2, 1 ] ) // green
-
-      gl.uniform3fv( uniforms.u_lightWorldPosition, lightPosition.data )
-      gl.uniform3fv( uniforms.u_viewWorldPosition, cameraPosition.data )
-
-      for ( const { materialUniforms, x=0, y=0, z=0, rotateX=0, rotateY=0, rotateZ=0 } of instances ) {
-        const world = new Matrix4( matrices.world )
+      for ( const { x=0, y=0, z=0, rotateX=0, rotateY=0, rotateZ=0 } of instances ) {
+        const world = new Matrix4( _matrices.world )
           .translate( x, y, z )
-          .rotateX( rotateX * Math.PI / 180 )
-          .rotateY( rotateY * Math.PI / 180 )
-          .rotateZ( rotateZ * Math.PI / 180 )
-        const worldViewProjection = new Matrix4( matrices.worldViewProjection ).multiply( world )
+          .rotateX( degToRad( rotateX ) )
+          .rotateY( degToRad( rotateY ) )
+          .rotateZ( degToRad( rotateZ ) )
+        const worldViewProjection = new Matrix4( _matrices.worldViewProjection ).multiply( world )
         const worldInverseTranspose = new Matrix4( new Matrix4( world ).inverse() ).transpose()
 
         gl.uniformMatrix4fv( uniforms.u_worldViewProjection, false, worldViewProjection.data )
         gl.uniformMatrix4fv( uniforms.u_worldInverseTranspose, false, worldInverseTranspose.data )
         gl.uniformMatrix4fv( uniforms.u_world, false, world.data )
-
-        gl.uniform1f( uniforms.u_shininess, materialUniforms.u_shininess )
-        gl.uniform4fv( uniforms.u_lightColor, materialUniforms.u_lightColor )
-        gl.uniform4fv( uniforms.u_colorMult, materialUniforms.u_colorMult )
-        gl.uniform4fv( uniforms.u_specular, materialUniforms.u_specular )
-        gl.uniform1f( uniforms.u_specularFactor, materialUniforms.u_specularFactor )
-
-        gl.activeTexture( gl.TEXTURE0 );
-        gl.bindTexture( gl.TEXTURE_2D, materialUniforms.u_diffuse );
-        gl.uniform1i( uniforms.u_diffuse, 0 );
 
         gl.drawArrays( gl.TRIANGLES, 0, modelInfo.indices )
       }
@@ -1002,8 +1124,8 @@ export class Program {
     let fShader
 
     if ( /camera|shadow/.test( typeOrVertexShader )) {
-      vShader = this.createShader( gl, gl.VERTEX_SHADER, Program[ `${typeOrVertexShader}_vertexShader` ] )
-      fShader = this.createShader( gl, gl.FRAGMENT_SHADER, Program[ `${typeOrVertexShader}_fragmentShader` ] )
+      vShader = this.createShader( gl, gl.VERTEX_SHADER, Renderer[ `${typeOrVertexShader}_vertexShader` ] )
+      fShader = this.createShader( gl, gl.FRAGMENT_SHADER, Renderer[ `${typeOrVertexShader}_fragmentShader` ] )
     }
     else if ( typeOrVertexShader && fragmentShader ) {
       vShader = typeof vertexShader   == `string`  ?  createShader( gl, gl.VERTEX_SHADER, vertexShader )      :  vertexShader
@@ -1099,7 +1221,26 @@ export class Program {
     return vao
   }
 }
-Program.camera_vertexShader = `#version 300 es
+Renderer.Material = class Material {
+  /**
+   * @param {string} name
+   * @param {object} param1
+   * @param {number[]} param1.lightColor
+   * @param {number[]} param1.colorMult
+   * @param {number[]} param1.specular
+   * @param {number} param1.specularFactor
+   * @param {number} param1.shininess
+   */
+  constructor( name, { lightColor, colorMult, specular, specularFactor, shininess } ) {
+    this.name = name
+    this.lightColor = lightColor
+    this.colorMult = colorMult
+    this.specular = specular
+    this.specularFactor = specularFactor
+    this.shininess = shininess
+  }
+}
+Renderer.camera_vertexShader = `#version 300 es
   uniform mat4 u_worldViewProjection;
   uniform vec3 u_lightWorldPosition;
   uniform mat4 u_world;
@@ -1125,7 +1266,7 @@ Program.camera_vertexShader = `#version 300 es
     v_surfaceToView = (u_viewInverse[ 3 ] - (u_world * a_position)).xyz;
     gl_Position = v_position;
   }`
-Program.camera_fragmentShader = `#version 300 es
+Renderer.camera_fragmentShader = `#version 300 es
   precision mediump float;
 
   in vec4 v_position;
@@ -1176,5 +1317,5 @@ Program.camera_fragmentShader = `#version 300 es
     // outColor = vec4( .2, .8, .2, 1 );
   }
 `
-Program.VertexShader_shadow = ``
-Program.FragmentShader_shadow = ``
+Renderer.VertexShader_shadow = ``
+Renderer.FragmentShader_shadow = ``

@@ -1,118 +1,62 @@
 import {
-  Program,
+  Renderer,
   Model,
   Texture,
   Matrix4,
   Vector3,
   createMatrices,
-} from "./webGlUtils"
+} from "./webGlUtils.js"
 
-function radToDeg( r ) {
-  return r * 180 / Math.PI;
-}
-function degToRad( d ) {
-  return d * Math.PI / 180;
-}
+/** @type {WebGLRenderingContext} */
+const gl = document.querySelector( `.gl` ).getContext( `webgl2` )
+
+gl.canvas.height = window.innerHeight
+gl.canvas.width = window.innerWidth
 
 main()
 async function main() {
-  /** @type {HTMLCanvasElement} */
-  const canvas = document.querySelector( `.gl` )
-  /** @type {WebGLRenderingContext} */
-  const gl = canvas.getContext( `webgl2` )
+  const ctx = new Renderer( gl )
+  let rX = 0
+  let rY = 0
+  let rZ = 0
 
-  canvas.width = window.innerWidth
-  canvas.height = window.innerHeight
+  ctx.setAspect( gl.canvas.clientWidth / gl.canvas.clientHeight )
+  ctx.setCameraPos( 0, 2, 5 )
+  ctx.setTargetPos( 0, 1, 0 )
+  ctx.setPointLightPos( 1.3, 2, 2 )
 
-  const programs = new Program( gl )
-  const barrel = await Model.create( `./models/barrel.obj` )
-  const prism = Model.createPrism( 1, 1, 1 )
+  await ctx.loadModel( `barrel`, `./models/barrel.obj` )
+  await ctx.createTextureImg( `barrel`, `./models/barrel.png` )
+  ctx.createTextureColor( `color`, `red` )
 
-  // programs.loadModel( `barrel`, barrel )
-  programs.loadModel( `prism`, prism )
-  // programs.addInstances( `barrel`, [
-  //   new Model.Instance( {
-  //     translate: [ -2, -2, 0 ],
-  //     lightColor: [ 1, 1, 1, 1 ],
-  //     colorMult: [ 1, 1, 1, 1 ],
-  //     diffuse: await Texture.createFromImg( gl, `./models/barrel.png` ),
-  //     specular: [1, 1, 1, 1],
-  //     shininess: 1,
-  //     specularFactor: 0,
-  //   } ),
-  //   new Model.Instance( {
-  //     // translate: [ 2, 0, 0 ],
-  //     rotate: [ 0, degToRad( -90 ), 0 ],
-  //     lightColor: [ 1, 1, 1, 1 ],
-  //     colorMult: [ 1, 1, 1, 1 ],
-  //     diffuse: await Texture.createFromImg( gl, `./models/barrel.png` ),
-  //     specular: [1, 1, 1, 1],
-  //     shininess: 200,
-  //     specularFactor: 0,
-  //   } )
-  // ] )
-  programs.addInstances( `prism`, [
-    new Model.Instance( {
-      // translate: [ -2, -2, 0 ],
-      rotate: [ -45, 0, 0 ],
-      lightColor: [ 1, 1, 1, 1 ],
-      colorMult: [ 1, 1, 1, 1 ],
-      // diffuse: await Texture.createFromImg( gl, `./models/barrel.png` ),
-      diffuse: Texture.createChecker( gl, `red`, `green` ),
-      specular: [1, 1, 1, 1],
-      shininess: 1,
-      specularFactor: 0,
-    } ),
-  ] )
+  ctx.createMaterial( `mat1`, {
+    lightColor: [ 1, 1, 1, 1 ], // tf
+    colorMult: [ 1, 1, 1, 1 ],
+    specular: [1, 1, 1, 1], // ks
+    specularFactor: 0,
+    shininess: 1,
+  } )
+  ctx.createMaterial( `mat2`, {
+    lightColor: [ 1, 1, 1, 1 ], // tf
+    colorMult: [ 1, 1, 1, 1 ],
+    specular: [1, 1, 1, 1], // ks
+    specularFactor: 1,
+    shininess: 500,
+  } )
 
-
-  const lightPosition = new Vector3( 0, 10, 15 )
-  const cameraPosition = new Vector3( 0, 0, 5 )
-  const targetPosition = new Vector3( 0, 0, 0 )
-
-  const draw = () => programs.draw( lightPosition, cameraPosition, createMatrices( {
-    cameraPosition, targetPosition,
-    fieldOfViewRadians: degToRad( 60 ),
-    up: new Vector3( 0, 1, 0 ),
-
-    worldRotateX: 0,
-    worldRotateY: 0,
-
-    aspect: gl.canvas.clientWidth / gl.canvas.clientHeight,
-    zNear: 1,
-    zFar: 1000
-  } ) )
-
-  // setTimeout( () => {
   setInterval( () => {
-    programs.models.get( `prism` ).instances[ 0 ].rotateY += 1
-    // translateX += incrementator
-    // rotateX += incrementator * 1
+    rX += .75
+    rY += .5
+    rZ += 1
 
-    // if ( Math.abs( translateX ) > 250 )
-    //   incrementator *= -1
+    ctx.useTexture( `color` )
+    ctx.useMaterial( `mat2` )
+    ctx.draw( `barrel` )
+    ctx.draw( `barrel`, { x:-2 } )
 
-    if ( keys[ 37 ] ) {
-      camera.data[ 0 ] += -1
-      target.data[ 0 ] += -1
-    }
-    if ( keys[ 39 ] ) {
-      camera.data[ 0 ] += 1
-      target.data[ 0 ] += 1
-    }
-
-    if ( keys[ 38 ] ) {
-      camera.data[ 2 ] += -1
-      target.data[ 2 ] += -1
-    }
-    if ( keys[ 40 ] ) {
-      camera.data[ 2 ] += 1
-      target.data[ 2 ] += 1
-    }
-
-    // cameraPosition.data[ 2 ] += cameraMover
-
-    draw()
+    ctx.useTexture( `barrel` ) // set diffuse
+    ctx.useMaterial( `mat1` )
+    ctx.draw( `barrel`, { x:2, rX, rY, rZ } )
   }, 10 )
 }
 
@@ -132,8 +76,8 @@ document.addEventListener( `keydown`, e => keys[ e.keyCode ] = true )
 document.addEventListener( `keyup`, e => keys[ e.keyCode ] = false )
 document.addEventListener( `mousemove`, ({ clientX, clientY }) => { return
   if ( mouse.clientX ) {
-    const diffX = degToRad( clientX - mouse.clientX )
-    const diffY = degToRad( mouse.clientY - clientY )
+    const diffX = ( clientX - mouse.clientX ) * Math.PI / 180
+    const diffY = ( mouse.clientY - clientY ) * Math.PI / 180
     let x, y, z
 
     x = target.data[ 0 ] - camera.data[ 0 ]
