@@ -4,7 +4,6 @@
 export function degToRad( v ) {
   return v * Math.PI / 180
 }
-
 /** Class of 4x4 matrix - X Y Z W
  */
 export class Matrix4 {
@@ -472,6 +471,9 @@ export function createMatrices( {
 /** Namespace for textures functions
  */
 export class Texture {
+  static _canvas = document.createElement( `canvas` )
+  static _ctx = Texture._canvas.getContext( `2d` )
+
   /** Set canvas width and height
    * @param {number} width
    * @param {number} [height] By default height = width
@@ -555,14 +557,57 @@ export class Texture {
     return this._createTexture( gl )
   }
 }
-Texture._canvas = document.createElement( `canvas` )
-Texture._ctx = Texture._canvas.getContext( `2d` )
-
-
-
 /** Namespace for .obj models loader and for its instances class and for primitives
  */
 export class Model {
+  static Material = class Material {
+    constructor( name ) {
+      this.name = name
+      this.faces = []
+      this.kd = []
+      this.kdMap = { width:0, height:0, data:[] }
+    }
+  }
+  static Instance = class ModelInstance {
+    /** Create classical model for predefined shaders
+     * @param {Object} param0
+     * @param {number[]} param0.rotate Array with 3 elements (x, y, z)
+     * @param {number[]} param0.translate Array with 3 elements (rotate by x, y, z axes)
+     * @param {number[]} param0.lightColor Array with 4 elements (r, g, b, a)
+     * @param {number[]} param0.colorMult Array with 4 elements (r, g, b, a)
+     * @param {number[]} param0.specular Array with 4 elements (r, g, b, a)
+     * @param {number} param0.specularFactor
+     * @param {WebGLTexture} param0.diffuse
+     */
+    constructor( {
+      rotate = [ 0, 0, 0 ],
+      translate = [ 0, 0, 0 ],
+      lightColor = [ 1, 1, 1, 1 ],
+      colorMult = [ 1, 1, 1, 1 ],
+      specular = [1, 1, 1, 1],
+      specularFactor = 0,
+      shininess = 1,
+      diffuse
+    } ) {
+      this.x = translate[ 0 ]
+      this.y = translate[ 1 ]
+      this.z = translate[ 2 ]
+
+      this.rotateX = rotate[ 0 ]
+      this.rotateY = rotate[ 1 ]
+      this.rotateZ = rotate[ 2 ]
+
+      this.materialUniforms = {
+        u_lightColor: lightColor,
+        u_colorMult: colorMult,
+        u_diffuse: diffuse,
+        u_shininess: shininess,
+        u_specular: specular,
+        u_specularFactor: specularFactor
+      }
+    }
+  }
+
   /** Constructor
    * @param {string} url
    */
@@ -869,59 +914,220 @@ export class Model {
     }
   }
 }
-Model.Material = class Material {
-  constructor( name ) {
-    this.name = name
-    this.faces = []
-    this.kd = []
-    this.kdMap = { width:0, height:0, data:[] }
-  }
-}
-Model.Instance = class ModelInstance {
-  /** Create classical model for predefined shaders
-   * @param {Object} param0
-   * @param {number[]} param0.rotate Array with 3 elements (x, y, z)
-   * @param {number[]} param0.translate Array with 3 elements (rotate by x, y, z axes)
-   * @param {number[]} param0.lightColor Array with 4 elements (r, g, b, a)
-   * @param {number[]} param0.colorMult Array with 4 elements (r, g, b, a)
-   * @param {number[]} param0.specular Array with 4 elements (r, g, b, a)
-   * @param {number} param0.specularFactor
-   * @param {WebGLTexture} param0.diffuse
+/** Namespace for WebGl program and shaders creators and activators
+ */
+export class Program {
+  /** Create WebGl program
+   * @param {WebGLRenderingContext} gl
+   * @param {"camera|"shadow"|WebGLShader} typeOrVertexShader Type of program or vertex shader or its code
+   * @param {string|WebGLShader} [fragmentShader] Fragment shader or its code
    */
-  constructor( {
-    rotate = [ 0, 0, 0 ],
-    translate = [ 0, 0, 0 ],
-    lightColor = [ 1, 1, 1, 1 ],
-    colorMult = [ 1, 1, 1, 1 ],
-    specular = [1, 1, 1, 1],
-    specularFactor = 0,
-    shininess = 1,
-    diffuse
-  } ) {
-    this.x = translate[ 0 ]
-    this.y = translate[ 1 ]
-    this.z = translate[ 2 ]
+  static create( gl, typeOrVertexShader=`camera`, fragmentShader=null ) {
+    const program = gl.createProgram()
 
-    this.rotateX = rotate[ 0 ]
-    this.rotateY = rotate[ 1 ]
-    this.rotateZ = rotate[ 2 ]
+    let vShader
+    let fShader
 
-    this.materialUniforms = {
-      u_lightColor: lightColor,
-      u_colorMult: colorMult,
-      u_diffuse: diffuse,
-      u_shininess: shininess,
-      u_specular: specular,
-      u_specularFactor: specularFactor
+    if ( /camera|shadow/.test( typeOrVertexShader )) {
+      vShader = this.createShader( gl, gl.VERTEX_SHADER, Program.shaders[ typeOrVertexShader ].vertex )
+      fShader = this.createShader( gl, gl.FRAGMENT_SHADER, Program.shaders[ typeOrVertexShader ].fragment )
     }
+    else if ( typeOrVertexShader && fragmentShader ) {
+      vShader = typeof vertexShader   == `string`  ?  createShader( gl, gl.VERTEX_SHADER, vertexShader )      :  vertexShader
+      fShader = typeof fragmentShader == `string`  ?  createShader( gl, gl.FRAGMENT_SHADER, fragmentShader )  :  fragmentShader
+    }
+
+    gl.attachShader( program, vShader )
+    gl.attachShader( program, fShader )
+
+    gl.linkProgram( program )
+
+    if( !gl.getProgramParameter( program, gl.LINK_STATUS ) )
+      throw `Could not compile WebGL program.\n  ${gl.getProgramInfoLog( program )}`
+
+    return program
+  }
+  /** Create WebGL shader from source
+   * @param {WebGLRenderingContext} gl
+   * @param {WebGLRenderingContextBase} type gl.VERTEX_SHADER or gl.FRAGMENT_SHADER
+   * @param {string} source
+   */
+  static createShader( gl, type, source ) {
+    const shader = gl.createShader( type )
+
+    gl.shaderSource( shader, source )
+    gl.compileShader( shader )
+
+    return shader
+  }
+  /** Get webgl program attributes
+   * @param {WebGLRenderingContext} gl
+   * @param {WebGLProgram} program
+   */
+  static getActiveAttributes( gl, program ) {
+    const numUniforms = gl.getProgramParameter(program, gl.ACTIVE_ATTRIBUTES )
+    const attributes = {}
+
+    for ( let i = 0;  i < numUniforms;  ++i ) {
+      const info = gl.getActiveAttrib( program, i );
+
+      attributes[ info.name ] = gl.getAttribLocation( program, info.name )
+    }
+
+    return attributes
+  }
+  /** Get webgl program uniforms
+   * @param {WebGLRenderingContext} gl
+   * @param {WebGLProgram} program
+   */
+  static getActiveUniforms( gl, program ) {
+    const numUniforms = gl.getProgramParameter( program, gl.ACTIVE_UNIFORMS )
+    const uniforms = {}
+
+    for ( let i = 0;  i < numUniforms;  ++i ) {
+      const info = gl.getActiveUniform( program, i );
+
+      uniforms[ info.name ] = gl.getUniformLocation( program, info.name )
+    }
+
+    return uniforms
+  }
+  /** Create vertex attributes object and set attributes data in buffers
+   * @param {WebGLRenderingContext} gl
+   * @param {WebGLProgram} program
+   * @param {{ numComponents:number, data:number[] }} attributes
+   */
+  static createVAOAndSetAttributes( gl, program, attributes ) {
+    const attributesPos = this.getActiveAttributes( gl, program )
+    const vao = gl.createVertexArray()
+
+    gl.bindVertexArray( vao )
+
+    for ( const attribute in attributes ) {
+      const attr = attributes[ attribute ]
+      const attrPos = attributesPos[ attribute ]
+      const buffer = gl.createBuffer()
+
+      gl.enableVertexAttribArray( attrPos )
+      gl.bindBuffer( gl.ARRAY_BUFFER, buffer )
+      gl.bufferData( gl.ARRAY_BUFFER, attr.data, gl.STATIC_DRAW )
+
+      const type = gl.FLOAT   // the data is 32bit floats
+      const normalize = false // don't normalize the data
+      const stride = 0        // 0 = move forward size * sizeof(type) each iteration to get the next position
+      const offset = 0        // start at the beginning of the buffer
+      gl.vertexAttribPointer( attrPos, attr.numComponents, type, normalize, stride, offset)
+    }
+
+    return vao
+  }
+  static shaders = {
+    camera: {
+      vertex: `#version 300 es
+        uniform mat4 u_worldViewProjection;
+        uniform vec3 u_lightWorldPosition;
+        uniform mat4 u_world;
+        uniform mat4 u_viewInverse;
+        uniform mat4 u_worldInverseTranspose;
+
+        in vec4 a_position;
+        in vec3 a_normal;
+        in vec2 a_texcoord;
+
+        out vec4 v_position;
+        out vec2 v_texCoord;
+        out vec3 v_normal;
+        out vec3 v_surfaceToLight;
+        out vec3 v_surfaceToView;
+
+        void main() {
+          v_texCoord = a_texcoord;
+          v_position = (u_worldViewProjection * a_position);
+          v_normal = (u_worldInverseTranspose * vec4( a_normal, 0 )).xyz;
+
+          v_surfaceToLight = u_lightWorldPosition - (u_world * a_position).xyz;
+          v_surfaceToView = (u_viewInverse[ 3 ] - (u_world * a_position)).xyz;
+          gl_Position = v_position;
+        }
+      `,
+      fragment: `#version 300 es
+        precision mediump float;
+
+        in vec4 v_position;
+        in vec2 v_texCoord;
+        in vec3 v_normal;
+        in vec3 v_surfaceToLight;
+        in vec3 v_surfaceToView;
+
+        uniform vec4 u_lightColor;
+        uniform vec4 u_colorMult;
+        uniform sampler2D u_diffuse;
+        uniform vec4 u_specular;
+        uniform float u_shininess;
+        uniform float u_specularFactor;
+
+        out vec4 outColor;
+
+        vec4 lit( float l, float h, float m ) {
+          return vec4(
+            1.0,
+            max( l, 0.0 ),
+            (l > 0.0)  ?  pow( max( 0.0, h ), m )  :  0.0,
+            1.0
+          );
+        }
+
+        void main() {
+          vec4 diffuseColor = texture( u_diffuse, v_texCoord );
+          vec3 a_normal = normalize( v_normal );
+          vec3 surfaceToLight = normalize( v_surfaceToLight );
+          vec3 surfaceToView = normalize( v_surfaceToView );
+          vec3 halfVector = normalize( surfaceToLight + surfaceToView );
+
+          vec4 litR = lit(
+            dot( a_normal, surfaceToLight ),
+            dot( a_normal, halfVector ),
+            u_shininess
+          );
+
+          outColor = vec4(
+            (u_lightColor * (
+              diffuseColor * litR.y * u_colorMult +
+              u_specular * litR.z * u_specularFactor
+            ) ).rgb,
+            diffuseColor.a
+          );
+
+          // outColor = vec4( .2, .8, .2, 1 );
+        }
+      `
+    },
+    shadow: { vertex:``, fragment:`` }
   }
 }
-
-
-
 /** WebGL Library renderer (main, and general class)
  */
 export default class Renderer {
+  static Material = class Material {
+    /**
+     * @param {string} name
+     * @param {object} param1
+     * @param {number[]} param1.lightColor
+     * @param {number[]} param1.colorMult
+     * @param {number[]} param1.specular
+     * @param {number} param1.specularFactor
+     * @param {number} param1.shininess
+     */
+    constructor( name, { lightColor, colorMult, specular, specularFactor, shininess } ) {
+      this.name = name
+      this.lightColor = lightColor
+      this.colorMult = colorMult
+      this.specular = specular
+      this.specularFactor = specularFactor
+      this.shininess = shininess
+    }
+  }
+
   /** Create WebGl program
    * @param {WebGLRenderingContext} gl
    * @param {string|WebGLShader} [vertexShader] Vertex shader or its source
@@ -1128,212 +1334,3 @@ export default class Renderer {
     gl.drawArrays( gl.TRIANGLES, 0, modelInfo.indices )
   }
 }
-Renderer.Material = class Material {
-  /**
-   * @param {string} name
-   * @param {object} param1
-   * @param {number[]} param1.lightColor
-   * @param {number[]} param1.colorMult
-   * @param {number[]} param1.specular
-   * @param {number} param1.specularFactor
-   * @param {number} param1.shininess
-   */
-  constructor( name, { lightColor, colorMult, specular, specularFactor, shininess } ) {
-    this.name = name
-    this.lightColor = lightColor
-    this.colorMult = colorMult
-    this.specular = specular
-    this.specularFactor = specularFactor
-    this.shininess = shininess
-  }
-}
-
-
-
-/** Namespace for WebGl program and shaders creators and activators
- */
-export class Program {
-  /** Create WebGl program
-   * @param {WebGLRenderingContext} gl
-   * @param {string|WebGLShader} typeOrVertexShader Type of program (may be `camera` or `shadow`) or vertex shader or its source
-   * @param {string|WebGLShader} [fragmentShader] Fragment shader or its code
-   */
-  static create( gl, typeOrVertexShader=`camera`, fragmentShader=null ) {
-    const program = gl.createProgram()
-
-    let vShader
-    let fShader
-
-    if ( /camera|shadow/.test( typeOrVertexShader )) {
-      vShader = this.createShader( gl, gl.VERTEX_SHADER, Program[ `${typeOrVertexShader}_vertexShader` ] )
-      fShader = this.createShader( gl, gl.FRAGMENT_SHADER, Program[ `${typeOrVertexShader}_fragmentShader` ] )
-    }
-    else if ( typeOrVertexShader && fragmentShader ) {
-      vShader = typeof vertexShader   == `string`  ?  createShader( gl, gl.VERTEX_SHADER, vertexShader )      :  vertexShader
-      fShader = typeof fragmentShader == `string`  ?  createShader( gl, gl.FRAGMENT_SHADER, fragmentShader )  :  fragmentShader
-    }
-
-    gl.attachShader( program, vShader )
-    gl.attachShader( program, fShader )
-
-    gl.linkProgram( program )
-
-    if( !gl.getProgramParameter( program, gl.LINK_STATUS ) )
-      throw `Could not compile WebGL program.\n  ${gl.getProgramInfoLog( program )}`
-
-    return program
-  }
-  /** Create WebGL shader from source
-   * @param {WebGLRenderingContext} gl
-   * @param {WebGLRenderingContextBase} type gl.VERTEX_SHADER or gl.FRAGMENT_SHADER
-   * @param {string} source
-   */
-  static createShader( gl, type, source ) {
-    const shader = gl.createShader( type )
-
-    gl.shaderSource( shader, source )
-    gl.compileShader( shader )
-
-    return shader
-  }
-  /** Get webgl program attributes
-   * @param {WebGLRenderingContext} gl
-   * @param {WebGLProgram} program
-   */
-  static getActiveAttributes( gl, program ) {
-    const numUniforms = gl.getProgramParameter(program, gl.ACTIVE_ATTRIBUTES )
-    const attributes = {}
-
-    for ( let i = 0;  i < numUniforms;  ++i ) {
-      const info = gl.getActiveAttrib( program, i );
-
-      attributes[ info.name ] = gl.getAttribLocation( program, info.name )
-    }
-
-    return attributes
-  }
-  /** Get webgl program uniforms
-   * @param {WebGLRenderingContext} gl
-   * @param {WebGLProgram} program
-   */
-  static getActiveUniforms( gl, program ) {
-    const numUniforms = gl.getProgramParameter( program, gl.ACTIVE_UNIFORMS )
-    const uniforms = {}
-
-    for ( let i = 0;  i < numUniforms;  ++i ) {
-      const info = gl.getActiveUniform( program, i );
-
-      uniforms[ info.name ] = gl.getUniformLocation( program, info.name )
-    }
-
-    return uniforms
-  }
-  /** Create vertex attributes object and set attributes data in buffers
-   * @param {WebGLRenderingContext} gl
-   * @param {WebGLProgram} program
-   * @param {{ numComponents:number, data:number[] }} attributes
-   */
-  static createVAOAndSetAttributes( gl, program, attributes ) {
-    const attributesPos = this.getActiveAttributes( gl, program )
-    const vao = gl.createVertexArray()
-
-    gl.bindVertexArray( vao )
-
-    for ( const attribute in attributes ) {
-      const attr = attributes[ attribute ]
-      const attrPos = attributesPos[ attribute ]
-      const buffer = gl.createBuffer()
-
-      gl.enableVertexAttribArray( attrPos )
-      gl.bindBuffer( gl.ARRAY_BUFFER, buffer )
-      gl.bufferData( gl.ARRAY_BUFFER, attr.data, gl.STATIC_DRAW )
-
-      const type = gl.FLOAT   // the data is 32bit floats
-      const normalize = false // don't normalize the data
-      const stride = 0        // 0 = move forward size * sizeof(type) each iteration to get the next position
-      const offset = 0        // start at the beginning of the buffer
-      gl.vertexAttribPointer( attrPos, attr.numComponents, type, normalize, stride, offset)
-    }
-
-    return vao
-  }
-}
-Program.camera_vertexShader = `#version 300 es
-  uniform mat4 u_worldViewProjection;
-  uniform vec3 u_lightWorldPosition;
-  uniform mat4 u_world;
-  uniform mat4 u_viewInverse;
-  uniform mat4 u_worldInverseTranspose;
-
-  in vec4 a_position;
-  in vec3 a_normal;
-  in vec2 a_texcoord;
-
-  out vec4 v_position;
-  out vec2 v_texCoord;
-  out vec3 v_normal;
-  out vec3 v_surfaceToLight;
-  out vec3 v_surfaceToView;
-
-  void main() {
-    v_texCoord = a_texcoord;
-    v_position = (u_worldViewProjection * a_position);
-    v_normal = (u_worldInverseTranspose * vec4( a_normal, 0 )).xyz;
-
-    v_surfaceToLight = u_lightWorldPosition - (u_world * a_position).xyz;
-    v_surfaceToView = (u_viewInverse[ 3 ] - (u_world * a_position)).xyz;
-    gl_Position = v_position;
-  }`
-Program.camera_fragmentShader = `#version 300 es
-  precision mediump float;
-
-  in vec4 v_position;
-  in vec2 v_texCoord;
-  in vec3 v_normal;
-  in vec3 v_surfaceToLight;
-  in vec3 v_surfaceToView;
-
-  uniform vec4 u_lightColor;
-  uniform vec4 u_colorMult;
-  uniform sampler2D u_diffuse;
-  uniform vec4 u_specular;
-  uniform float u_shininess;
-  uniform float u_specularFactor;
-
-  out vec4 outColor;
-
-  vec4 lit( float l, float h, float m ) {
-    return vec4(
-      1.0,
-      max( l, 0.0 ),
-      (l > 0.0)  ?  pow( max( 0.0, h ), m )  :  0.0,
-      1.0
-    );
-  }
-
-  void main() {
-    vec4 diffuseColor = texture( u_diffuse, v_texCoord );
-    vec3 a_normal = normalize( v_normal );
-    vec3 surfaceToLight = normalize( v_surfaceToLight );
-    vec3 surfaceToView = normalize( v_surfaceToView );
-    vec3 halfVector = normalize( surfaceToLight + surfaceToView );
-
-    vec4 litR = lit(
-      dot( a_normal, surfaceToLight ),
-      dot( a_normal, halfVector ),
-      u_shininess
-    );
-
-    outColor = vec4(
-      (u_lightColor * (
-        diffuseColor * litR.y * u_colorMult +
-        u_specular * litR.z * u_specularFactor
-      ) ).rgb,
-      diffuseColor.a
-    );
-
-    // outColor = vec4( .2, .8, .2, 1 );
-  }
-`
-Program.VertexShader_shadow = ``
-Program.FragmentShader_shadow = ``
