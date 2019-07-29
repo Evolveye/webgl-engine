@@ -1,3 +1,6 @@
+/** transform values in degrees to radians
+ * @param {number} v
+ */
 export function degToRad( v ) {
   return v * Math.PI / 180
 }
@@ -6,7 +9,7 @@ export function degToRad( v ) {
  */
 export class Matrix4 {
   /** Constructor of the matrix
-   * @param {Number[]|Float32Array|Matrix4} [nums]
+   * @param {number[]|Float32Array|Matrix4} [nums]
    */
   constructor( nums ) {
     if (nums) {
@@ -36,8 +39,8 @@ export class Matrix4 {
     }
   }
   /** Multiply two matrices and return a new matrix
-   * @param {Number[]|Float32Array|Matrix4} matrixA
-   * @param {Number[]|Float32Array|Matrix4} matrixB
+   * @param {number[]|Float32Array|Matrix4} matrixA
+   * @param {number[]|Float32Array|Matrix4} matrixB
    */
   static multiply( matrixA, matrixB ) {
     let a = matrixA instanceof this ? matrixA.data.slice() : matrixA
@@ -105,7 +108,7 @@ export class Matrix4 {
     return this
   }
   /**
-   * @param {Number} fudgeFactor
+   * @param {number} fudgeFactor
    */
   makeZToWMatrix( fudgeFactor ) {
     this.data = this.multiply( [
@@ -118,10 +121,10 @@ export class Matrix4 {
     return this
   }
   /**
-   * @param {Number} fieldOfViewInRadians field of view
-   * @param {Number} aspect aspect of viewport (width / height)
-   * @param {Number} near near Z clipping plane
-   * @param {Number} far far Z clipping plane
+   * @param {number} fieldOfViewInRadians field of view
+   * @param {number} aspect aspect of viewport (width / height)
+   * @param {number} near near Z clipping plane
+   * @param {number} far far Z clipping plane
    */
   setPerspective( fieldOfViewInRadians, aspect, near, far ) {
     let f = Math.tan( Math.PI * .5 - .5 * fieldOfViewInRadians )
@@ -137,9 +140,9 @@ export class Matrix4 {
     return this
   }
   /**
-   * @param {Number} width
-   * @param {Number} height
-   * @param {Number} depth
+   * @param {number} width
+   * @param {number} height
+   * @param {number} depth
    */
   setProjection( width, height, depth ) {
     this.data = this.multiply( [
@@ -152,9 +155,9 @@ export class Matrix4 {
     return this
   }
   /** Move the object
-   * @param {Number} tx X translation
-   * @param {Number} ty Y translation
-   * @param {Number} tz Z translation
+   * @param {number} tx X translation
+   * @param {number} ty Y translation
+   * @param {number} tz Z translation
    */
   translate( tx, ty, tz ) {
     this.data = this.multiply( [
@@ -167,7 +170,7 @@ export class Matrix4 {
     return this
   }
   /** Rotate object around the X axis
-   * @param {Number} angleInRadians amount to rotate
+   * @param {number} angleInRadians amount to rotate
    */
   rotateX( angleInRadians ) {
     let c = Math.cos( angleInRadians )
@@ -183,7 +186,7 @@ export class Matrix4 {
     return this
   }
   /** Rotate object around the Y axis
-   * @param {Number} angleInRadians amount to rotate
+   * @param {number} angleInRadians amount to rotate
    */
   rotateY( angleInRadians ) {
     let c = Math.cos( angleInRadians )
@@ -199,7 +202,7 @@ export class Matrix4 {
     return this
   }
   /** Rotate object around the Z axis
-   * @param {Number} angleInRadians amount to rotate
+   * @param {number} angleInRadians amount to rotate
    */
   rotateZ( angleInRadians ) {
     let c = Math.cos( angleInRadians )
@@ -215,9 +218,9 @@ export class Matrix4 {
     return this
   }
   /** Zoom in or zoom out the object
-   * @param {Number} sx_scale X scale or scale for every axis
-   * @param {Number} [sy] Y scale
-   * @param {Number} [sz] Z scale
+   * @param {number} sx_scale X scale or scale for every axis
+   * @param {number} [sy] Y scale
+   * @param {number} [sz] Z scale
    */
   scale( sx_scale, sy=sx_scale, sz=sx_scale ) {
     this.data = this.multiply( [
@@ -349,9 +352,9 @@ export class Matrix4 {
  */
 export class Vector3 {
   /**
-   * @param {Number|Number[]|Float32Array} [xOrVectorArray] Vector X value or all vector data
-   * @param {Number} [y] Y vector value
-   * @param {Number} [z] Z vector value
+   * @param {number|number[]|Float32Array} [xOrVectorArray] Vector X value or all vector data
+   * @param {number} [y] Y vector value
+   * @param {number} [z] Z vector value
    */
   constructor( xOrVectorArray=0, y=0, z=0 ) {
     if (xOrVectorArray.length === 3)
@@ -424,10 +427,10 @@ export class Vector3 {
  * @param {Vector3} param0.camera
  * @param {Vector3} param0.target
  * @param {Vector3} param0.up
- * @param {Number} param0.fieldOfViewRadians In degress
- * @param {Number} param0.aspect
- * @param {Number} param0.zNear
- * @param {Number} param0.zFar
+ * @param {number} param0.fieldOfViewRadians In degress
+ * @param {number} param0.aspect
+ * @param {number} param0.zNear
+ * @param {number} param0.zFar
  */
 export function createMatrices( {
   cameraPosition,
@@ -470,8 +473,8 @@ export function createMatrices( {
  */
 export class Texture {
   /** Set canvas width and height
-   * @param {Number} width
-   * @param {Number} [height] By default height = width
+   * @param {number} width
+   * @param {number} [height] By default height = width
    */
   static _resizeCanvas( width, height=width ) {
     this._canvas.width = width
@@ -499,7 +502,7 @@ export class Texture {
 
   /** Create texture from 1 color
    * @param {WebGLRenderingContext} gl
-   * @param {String} color
+   * @param {string} color
    */
   static createColor( gl, color ) {
     const ctx = this._ctx
@@ -514,8 +517,8 @@ export class Texture {
 
   /** Create checker texture
    * @param {WebGLRenderingContext} gl
-   * @param {String} color1
-   * @param {String} color2
+   * @param {string} color1
+   * @param {string} color2
    */
   static createChecker( gl, color1=`#ffffff`, color2=`#000000` ) {
     const ctx = this._ctx
@@ -534,7 +537,7 @@ export class Texture {
 
   /** Create texture from image
    * @param {WebGLRenderingContext} gl
-   * @param {String} src
+   * @param {string} src
    */
   static async createFromImg( gl, src ) {
     const img = new Image
@@ -555,11 +558,13 @@ export class Texture {
 Texture._canvas = document.createElement( `canvas` )
 Texture._ctx = Texture._canvas.getContext( `2d` )
 
+
+
 /** Namespace for .obj models loader and for its instances class and for primitives
  */
 export class Model {
   /** Constructor
-   * @param {String} url
+   * @param {string} url
    */
   constructor( name ) {
     this.name = name
@@ -848,7 +853,7 @@ export class Model {
   }
 
   /** `.obj` and `.mtl` files reader
-   * @param {String} path
+   * @param {string} path
    */
   static async * readFile( path ) {
     const rawObj = await fetch( path ).then( file => file.text() )
@@ -875,12 +880,12 @@ Model.Material = class Material {
 Model.Instance = class ModelInstance {
   /** Create classical model for predefined shaders
    * @param {Object} param0
-   * @param {Number[]} param0.rotate Array with 3 elements (x, y, z)
-   * @param {Number[]} param0.translate Array with 3 elements (rotate by x, y, z axes)
-   * @param {Number[]} param0.lightColor Array with 4 elements (r, g, b, a)
-   * @param {Number[]} param0.colorMult Array with 4 elements (r, g, b, a)
-   * @param {Number[]} param0.specular Array with 4 elements (r, g, b, a)
-   * @param {Number} param0.specularFactor
+   * @param {number[]} param0.rotate Array with 3 elements (x, y, z)
+   * @param {number[]} param0.translate Array with 3 elements (rotate by x, y, z axes)
+   * @param {number[]} param0.lightColor Array with 4 elements (r, g, b, a)
+   * @param {number[]} param0.colorMult Array with 4 elements (r, g, b, a)
+   * @param {number[]} param0.specular Array with 4 elements (r, g, b, a)
+   * @param {number} param0.specularFactor
    * @param {WebGLTexture} param0.diffuse
    */
   constructor( {
@@ -911,17 +916,20 @@ Model.Instance = class ModelInstance {
     }
   }
 }
-/** Namespace for WebGl program and shaders
+
+
+
+/** WebGL Library renderer (main, and general class)
  */
-export class Renderer {
+export default class Renderer {
   /** Create WebGl program
    * @param {WebGLRenderingContext} gl
-   * @param {String|WebGLShader} [vertexShader] Vertex shader or its source
-   * @param {String|WebGLShader} [fragmentShader] Fragment shader or its code
+   * @param {string|WebGLShader} [vertexShader] Vertex shader or its source
+   * @param {string|WebGLShader} [fragmentShader] Fragment shader or its code
    */
   constructor( gl, vertexShader=null, fragmentShader=null ) {
-    this.cameraProgram = Renderer.create( gl, `camera` )
-    this.uniforms = Renderer.getActiveUniforms( gl, this.cameraProgram )
+    this.cameraProgram = Program.create( gl, `camera` )
+    this.uniforms = Program.getActiveUniforms( gl, this.cameraProgram )
     this.gl = gl
 
     gl.enable( gl.CULL_FACE )
@@ -938,7 +946,7 @@ export class Renderer {
     this._pointLightPos = new Vector3( 0, 1, 2 )
     this._aspect = canvas.clientWidth / canvas.clientHeight
 
-    /** @type {Map<String,{modelInfo:Any instances:Model.Instance[] vao:Any }> */
+    /** @type {Map<string,{modelInfo:Any instances:Model.Instance[] vao:Any }> */
     this.models = new Map
     /** @type {Map<string,Renderer.Material} */
     this.materials = new Map
@@ -948,6 +956,8 @@ export class Renderer {
     this._matrices = null
   }
 
+  /** Rebuild matrices
+   */
   _rebuildMatrices() {
     this._matrices = createMatrices( {
       cameraPosition: this._cameraPos,
@@ -961,9 +971,9 @@ export class Renderer {
     } )
   }
 
-  /** Load model and create VAO from it
-   * @param {String} name
-   * @param {Model} model
+  /** Load model, create its VAO, and load it to renderer storage
+   * @param {string} name
+   * @param {string} urlToObj
    */
   async loadModel( name, urlToObj ) {
     const model = await Model.create( urlToObj )
@@ -971,49 +981,36 @@ export class Renderer {
     this.models.set( name, {
       modelInfo: model.info,
       instances: [],
-      vao: Renderer.createVAOAndSetAttributes( this.gl, this.cameraProgram, {
+      vao: Program.createVAOAndSetAttributes( this.gl, this.cameraProgram, {
         a_position: { numComponents:3, data:model.data.vertices },
         a_normal:   { numComponents:3, data:model.data.normals },
         a_texcoord: { numComponents:2, data:model.data.textureCoords }
       } )
     } )
   }
-
-  setCameraPos( x, y, z ) {
-    const { gl, uniforms, cameraProgram } = this
-
-    gl.useProgram( cameraProgram )
-    gl.uniform3fv( uniforms.u_viewWorldPosition, this._cameraPos.data )
-
-    this._cameraPos = new Vector3( x, y, z )
-    this._rebuildMatrices()
+  /** Create texture from image and load it to renderer storage
+   * @param {string} name
+   * @param {string} urlToImage
+   */
+  async createTextureImg( name, urlToImage ) {
+    this.textures.set( name, await Texture.createFromImg( this.gl, urlToImage ) )
   }
-  setTargetPos( x, y, z ) {
-    this._targetPos = new Vector3( x, y, z )
-    this._rebuildMatrices()
+  /** Create texture from color and load it to renderer storage
+   * @param {string} name
+   * @param {string} color
+   */
+  createTextureColor( name, color ) {
+    this.textures.set( name, Texture.createColor( this.gl, color ) )
   }
-  setPointLightPos( x, y, z ) {
-    const { gl, uniforms, cameraProgram } = this
-
-    gl.useProgram( cameraProgram )
-    gl.uniform3fv( uniforms.u_lightWorldPosition, this._pointLightPos.data )
-
-    this._pointLightPos = new Vector3( x, y, z )
-    this._rebuildMatrices()
+  /** Create checker texture and load it to renderer storage
+   * @param {string} name
+   * @param {string} color1
+   * @param {string} color2
+   */
+  createTextureChecker( name, color1, color2 ) {
+    this.textures.set( name, Texture.createChecker( this.gl, color1, color2 ) )
   }
-  setUpVector( x, y, z ) {
-    this._upVector = new Vector3( x, y, z )
-    this._rebuildMatrices()
-  }
-  setAspect( value ) {
-    this._aspect = value
-    this._rebuildMatrices()
-  }
-  setFieldOfView( value ) {
-    this._fieldOfView = value
-    this._rebuildMatrices()
-  }
-  /**
+  /** Create new material and load it to renderer storage
    * @param {string} name
    * @param {object} param1
    * @param {number[]} param1.lightColor
@@ -1025,14 +1022,66 @@ export class Renderer {
   createMaterial( name, materialInfo ) {
     this.materials.set( name, new Renderer.Material( name, materialInfo ) )
   }
-  async createTextureImg( name, urlToImage ) {
-    this.textures.set( name, await Texture.createFromImg( this.gl, urlToImage ) )
+
+  /** Set the camera position
+   * @param {number} x
+   * @param {number} y
+   * @param {number} z
+   */
+  setCameraPos( x, y, z ) {
+    const { gl, uniforms, cameraProgram } = this
+
+    gl.useProgram( cameraProgram )
+    gl.uniform3fv( uniforms.u_viewWorldPosition, this._cameraPos.data )
+
+    this._cameraPos = new Vector3( x, y, z )
+    this._rebuildMatrices()
   }
-  createTextureColor( name, color ) {
-    this.textures.set( name, Texture.createColor( this.gl, color ) )
+  /** Set the target position
+   * @param {number} x
+   * @param {number} y
+   * @param {number} z
+   */
+  setTargetPos( x, y, z ) {
+    this._targetPos = new Vector3( x, y, z )
+    this._rebuildMatrices()
   }
-  createTextureChecker( name, color1, color2 ) {
-    this.textures.set( name, Texture.createChecker( this.gl, color1, color2 ) )
+  /** Set the camera position
+   * @param {number} x
+   * @param {number} y
+   * @param {number} z
+   */
+  setPointLightPos( x, y, z ) {
+    const { gl, uniforms, cameraProgram } = this
+
+    gl.useProgram( cameraProgram )
+    gl.uniform3fv( uniforms.u_lightWorldPosition, this._pointLightPos.data )
+
+    this._pointLightPos = new Vector3( x, y, z )
+    this._rebuildMatrices()
+  }
+  /** Set the "up" vector
+   * @param {number} x
+   * @param {number} y
+   * @param {number} z
+   */
+  setUpVector( x, y, z ) {
+    this._upVector = new Vector3( x, y, z )
+    this._rebuildMatrices()
+  }
+  /** Set the "up" vector
+   * @param {number} value
+   */
+  setAspect( value ) {
+    this._aspect = value
+    this._rebuildMatrices()
+  }
+  /** Set the field of view (FoV)
+   * @param {number} value
+   */
+  setFieldOfView( value ) {
+    this._fieldOfView = value
+    this._rebuildMatrices()
   }
 
   useTexture( name ) {
@@ -1057,14 +1106,6 @@ export class Renderer {
     gl.uniform1f( uniforms.u_specularFactor, material.specularFactor )
   }
 
-  addInstance( name, instance ) {
-    this.models.get( name ).instances.push( instance )
-  }
-  addInstances( name, instances ) {
-    for ( const instance of instances )
-      this.models.get( name ).instances.push( instance )
-  }
-
   draw( modelName, { x=0, y=0, z=0, rX=0, rY=0, rZ=0 }={} ) {
     const { gl, _matrices, models, cameraProgram, uniforms } = this
     const { vao, modelInfo, instances } = models.get( modelName )
@@ -1086,36 +1127,36 @@ export class Renderer {
 
     gl.drawArrays( gl.TRIANGLES, 0, modelInfo.indices )
   }
-  drawTemp( modelName, { x, y, z, rX, rY, rZ }={} ) {
-    const { gl, _matrices, models, cameraProgram, uniforms } = this
-
-    gl.useProgram( cameraProgram )
-
-    for ( const { vao, modelInfo, instances } of models.values() ) {
-      gl.bindVertexArray( vao )
-
-      for ( const { x=0, y=0, z=0, rotateX=0, rotateY=0, rotateZ=0 } of instances ) {
-        const world = new Matrix4( _matrices.world )
-          .translate( x, y, z )
-          .rotateX( degToRad( rotateX ) )
-          .rotateY( degToRad( rotateY ) )
-          .rotateZ( degToRad( rotateZ ) )
-        const worldViewProjection = new Matrix4( _matrices.worldViewProjection ).multiply( world )
-        const worldInverseTranspose = new Matrix4( new Matrix4( world ).inverse() ).transpose()
-
-        gl.uniformMatrix4fv( uniforms.u_worldViewProjection, false, worldViewProjection.data )
-        gl.uniformMatrix4fv( uniforms.u_worldInverseTranspose, false, worldInverseTranspose.data )
-        gl.uniformMatrix4fv( uniforms.u_world, false, world.data )
-
-        gl.drawArrays( gl.TRIANGLES, 0, modelInfo.indices )
-      }
-    }
+}
+Renderer.Material = class Material {
+  /**
+   * @param {string} name
+   * @param {object} param1
+   * @param {number[]} param1.lightColor
+   * @param {number[]} param1.colorMult
+   * @param {number[]} param1.specular
+   * @param {number} param1.specularFactor
+   * @param {number} param1.shininess
+   */
+  constructor( name, { lightColor, colorMult, specular, specularFactor, shininess } ) {
+    this.name = name
+    this.lightColor = lightColor
+    this.colorMult = colorMult
+    this.specular = specular
+    this.specularFactor = specularFactor
+    this.shininess = shininess
   }
+}
 
+
+
+/** Namespace for WebGl program and shaders creators and activators
+ */
+export class Program {
   /** Create WebGl program
    * @param {WebGLRenderingContext} gl
-   * @param {String|WebGLShader} typeOrVertexShader Type of program (may be `camera` or `shadow`) or vertex shader or its source
-   * @param {String|WebGLShader} [fragmentShader] Fragment shader or its code
+   * @param {string|WebGLShader} typeOrVertexShader Type of program (may be `camera` or `shadow`) or vertex shader or its source
+   * @param {string|WebGLShader} [fragmentShader] Fragment shader or its code
    */
   static create( gl, typeOrVertexShader=`camera`, fragmentShader=null ) {
     const program = gl.createProgram()
@@ -1124,8 +1165,8 @@ export class Renderer {
     let fShader
 
     if ( /camera|shadow/.test( typeOrVertexShader )) {
-      vShader = this.createShader( gl, gl.VERTEX_SHADER, Renderer[ `${typeOrVertexShader}_vertexShader` ] )
-      fShader = this.createShader( gl, gl.FRAGMENT_SHADER, Renderer[ `${typeOrVertexShader}_fragmentShader` ] )
+      vShader = this.createShader( gl, gl.VERTEX_SHADER, Program[ `${typeOrVertexShader}_vertexShader` ] )
+      fShader = this.createShader( gl, gl.FRAGMENT_SHADER, Program[ `${typeOrVertexShader}_fragmentShader` ] )
     }
     else if ( typeOrVertexShader && fragmentShader ) {
       vShader = typeof vertexShader   == `string`  ?  createShader( gl, gl.VERTEX_SHADER, vertexShader )      :  vertexShader
@@ -1142,11 +1183,10 @@ export class Renderer {
 
     return program
   }
-
   /** Create WebGL shader from source
    * @param {WebGLRenderingContext} gl
    * @param {WebGLRenderingContextBase} type gl.VERTEX_SHADER or gl.FRAGMENT_SHADER
-   * @param {String} source
+   * @param {string} source
    */
   static createShader( gl, type, source ) {
     const shader = gl.createShader( type )
@@ -1156,7 +1196,6 @@ export class Renderer {
 
     return shader
   }
-
   /** Get webgl program attributes
    * @param {WebGLRenderingContext} gl
    * @param {WebGLProgram} program
@@ -1173,7 +1212,6 @@ export class Renderer {
 
     return attributes
   }
-
   /** Get webgl program uniforms
    * @param {WebGLRenderingContext} gl
    * @param {WebGLProgram} program
@@ -1190,11 +1228,10 @@ export class Renderer {
 
     return uniforms
   }
-
   /** Create vertex attributes object and set attributes data in buffers
    * @param {WebGLRenderingContext} gl
    * @param {WebGLProgram} program
-   * @param {{ numComponents:Number, data:Number[] }} attributes
+   * @param {{ numComponents:number, data:number[] }} attributes
    */
   static createVAOAndSetAttributes( gl, program, attributes ) {
     const attributesPos = this.getActiveAttributes( gl, program )
@@ -1221,26 +1258,7 @@ export class Renderer {
     return vao
   }
 }
-Renderer.Material = class Material {
-  /**
-   * @param {string} name
-   * @param {object} param1
-   * @param {number[]} param1.lightColor
-   * @param {number[]} param1.colorMult
-   * @param {number[]} param1.specular
-   * @param {number} param1.specularFactor
-   * @param {number} param1.shininess
-   */
-  constructor( name, { lightColor, colorMult, specular, specularFactor, shininess } ) {
-    this.name = name
-    this.lightColor = lightColor
-    this.colorMult = colorMult
-    this.specular = specular
-    this.specularFactor = specularFactor
-    this.shininess = shininess
-  }
-}
-Renderer.camera_vertexShader = `#version 300 es
+Program.camera_vertexShader = `#version 300 es
   uniform mat4 u_worldViewProjection;
   uniform vec3 u_lightWorldPosition;
   uniform mat4 u_world;
@@ -1266,7 +1284,7 @@ Renderer.camera_vertexShader = `#version 300 es
     v_surfaceToView = (u_viewInverse[ 3 ] - (u_world * a_position)).xyz;
     gl_Position = v_position;
   }`
-Renderer.camera_fragmentShader = `#version 300 es
+Program.camera_fragmentShader = `#version 300 es
   precision mediump float;
 
   in vec4 v_position;
@@ -1317,5 +1335,5 @@ Renderer.camera_fragmentShader = `#version 300 es
     // outColor = vec4( .2, .8, .2, 1 );
   }
 `
-Renderer.VertexShader_shadow = ``
-Renderer.FragmentShader_shadow = ``
+Program.VertexShader_shadow = ``
+Program.FragmentShader_shadow = ``
