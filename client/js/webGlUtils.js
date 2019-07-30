@@ -779,6 +779,8 @@ export class Model {
         } break
       }
 
+    Model.flipTextureCoords( model.data.textureCoords )
+
     model.info.multiplier = biggestVert
     model.info.textureCoords = textureCoords.length
     model.info.vertices = vertices.length
@@ -791,16 +793,17 @@ export class Model {
     model.data.normals = new Float32Array( model.data.normals )
     model.data.indices = new Float32Array( model.data.indices )
 
-    const matrix = new Matrix4().translate( .5, .5, 0 ).rotateX( Math.PI ).translate( -.5, -.5, 0 )
-    const texCoords = model.data.textureCoords
-    for ( let i = 0; i < texCoords.length; i += 2 ) {
-      const vector = new Vector3( texCoords[ i + 0 ], texCoords[ i + 1 ], 0 ).transformByMatrix( matrix )
-
-      texCoords[ i + 0 ] = vector.data[ 0 ]
-      texCoords[ i + 1 ] = vector.data[ 1 ]
-    }
-
     return model
+  }
+
+  static flipTextureCoords( coords ) {
+    const matrix = new Matrix4().translate( .5, .5, 0 ).rotateX( Math.PI ).translate( -.5, -.5, 0 )
+    for ( let i = 0; i < coords.length; i += 2 ) {
+      const vector = new Vector3( coords[ i + 0 ], coords[ i + 1 ], 0 ).transformByMatrix( matrix )
+
+      coords[ i + 0 ] = vector.data[ 0 ]
+      coords[ i + 1 ] = vector.data[ 1 ]
+    }
   }
 
   static createPrimitive( name ) {
@@ -923,6 +926,8 @@ export class Model {
         break
     }
 
+    Model.flipTextureCoords( textureCoords )
+
     model.info.multiplier = -1
     model.info.textureCoords = -1
     model.info.vertices = vertices.length
@@ -934,6 +939,7 @@ export class Model {
     model.data.vertices = vertices
     model.data.normals = normals
     model.data.indices = new Float32Array( new Array( vertices.length / 3 ) )
+
 
     return model
   }

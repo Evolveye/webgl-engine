@@ -46,7 +46,6 @@ gl.canvas.width = window.innerWidth
     ctx.useTexture( `red` )
     ctx.draw( `barrel` )
     ctx.draw( `barrel`, { x:-200 } )
-    // ctx.draw( `plane`, { x:50, rX } )
 
     ctx.useTexture( `green` )
     ctx.draw( `box1`, { x:-500, y:200, rX:(-rX * 2), rY, rZ } )
@@ -58,5 +57,6 @@ gl.canvas.width = window.innerWidth
     ctx.useMaterial( `mat1` )
     ctx.useTexture( `barrel` )
     ctx.draw( `barrel`, { x:200, rX, rY, rZ } )
+    ctx.draw( `plane1`, { y:-200, x:-200, rX:(-rX / 2) } )
   }, 1000 / 60 )
 }()
