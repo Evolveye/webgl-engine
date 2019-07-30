@@ -803,92 +803,124 @@ export class Model {
     return model
   }
 
-  static createBox( x, y, z ) {
-    const model = new Model( `Box` )
+  static createPrimitive( name ) {
+    const model = new Model( `Primitive-${name}` )
 
-    const vertices = new Float32Array( [
-      // back
-      -1, -1, -1,   -1,  1, -1,    1,  1, -1,
-      -1, -1, -1,    1,  1, -1,    1, -1, -1,
+    /** @type {Float32Array} */
+    let vertices
+    /** @type {Float32Array} */
+    let normals
+    /** @type {Float32Array} */
+    let textureCoords
 
-      // front
-       1,  1,  1,   -1,  1,  1,   -1, -1,  1,
-       1, -1,  1,    1,  1,  1,   -1, -1,  1,
+    switch ( name ) {
+      case `plane`:
+        vertices = new Float32Array( [
+          // back
+          -1, -1, 0,   -1,  1, 0,    1,  1, 0,
+          -1, -1, 0,    1,  1, 0,    1, -1, 0,
 
-      // left
-      -1,  1, -1,   -1, -1, -1,   -1, -1,  1,
-      -1,  1,  1,   -1,  1, -1,   -1, -1,  1,
+          // front0
+           1,  1, 0,   -1,  1, 0,   -1, -1, 0,
+           1, -1, 0,    1,  1, 0,   -1, -1, 0,
+        ] )
+        normals = new Float32Array( [
+          // back
+           0,  0, -1,   0,  0, -1,   0,  0, -1,
+           0,  0, -1,   0,  0, -1,   0,  0, -1,
 
-      // right
-       1, -1,  1,    1, -1, -1,    1,  1, -1,
-       1, -1,  1,    1,  1, -1,    1,  1,  1,
+          // front
+           0,  0,  1,   0,  0,  1,   0,  0,  1,
+           0,  0,  1,   0,  0,  1,   0,  0,  1,
+        ] )
+        textureCoords = new Float32Array( [
+          // back
+          0, 0,  0, 1,  1, 1,
+          0, 0,  1, 1,  1, 0,
 
-      // top
-       1,  1, -1,   -1,  1, -1,   -1,  1,  1,
-       1,  1,  1,    1,  1, -1,   -1,  1,  1,
+          // front
+          1, 1,  0, 1,  0, 0,
+          1, 0,  1, 1,  0, 0,
+        ] )
+        break
 
-      // bottom
-      -1, -1, -1,    1, -1, -1,   -1, -1,  1,
-       1, -1, -1,    1, -1,  1,   -1, -1,  1,
-    ] )
-    const normals = new Float32Array( [
-      // back
-       0,  0, -1,   0,  0, -1,   0,  0, -1,
-       0,  0, -1,   0,  0, -1,   0,  0, -1,
+      case `box`:
+        vertices = new Float32Array( [
+          // back
+          -1, -1, -1,   -1,  1, -1,    1,  1, -1,
+          -1, -1, -1,    1,  1, -1,    1, -1, -1,
 
-      // front
-       0,  0,  1,   0,  0,  1,   0,  0,  1,
-       0,  0,  1,   0,  0,  1,   0,  0,  1,
+          // front
+           1,  1,  1,   -1,  1,  1,   -1, -1,  1,
+           1, -1,  1,    1,  1,  1,   -1, -1,  1,
 
-      // left
-      -1,  0,  0,   -1,  0,  0,   -1,  0,  0,
-      -1,  0,  0,   -1,  0,  0,   -1,  0,  0,
+          // left
+          -1,  1, -1,   -1, -1, -1,   -1, -1,  1,
+          -1,  1,  1,   -1,  1, -1,   -1, -1,  1,
 
-      // right
-       1,  0,  0,   1,  0,  0,   1,  0,  0,
-       1,  0,  0,   1,  0,  0,   1,  0,  0,
+          // right
+           1, -1,  1,    1, -1, -1,    1,  1, -1,
+           1, -1,  1,    1,  1, -1,    1,  1,  1,
 
-      // top
-       0,  1,  0,   0,  1,  0,   0,  1,  0,
-       0,  1,  0,   0,  1,  0,   0,  1,  0,
+          // top
+           1,  1, -1,   -1,  1, -1,   -1,  1,  1,
+           1,  1,  1,    1,  1, -1,   -1,  1,  1,
 
-      // bottom
-       0, -1,  0,   0, -1,  0,   0, -1,  0,
-       0, -1,  0,   0, -1,  0,   0, -1,  0,
-    ] )
-    const textureCoords = new Float32Array( [
-      // back
-      0, 0,  0, 1,  1, 1,
-      0, 0,  1, 1,  1, 0,
+          // bottom
+          -1, -1, -1,    1, -1, -1,   -1, -1,  1,
+           1, -1, -1,    1, -1,  1,   -1, -1,  1,
+        ] )
+        normals = new Float32Array( [
+          // back
+           0,  0, -1,   0,  0, -1,   0,  0, -1,
+           0,  0, -1,   0,  0, -1,   0,  0, -1,
 
-      // front
-      1, 1,  0, 1,  0, 0,
-      1, 0,  1, 1,  0, 0,
+          // front
+           0,  0,  1,   0,  0,  1,   0,  0,  1,
+           0,  0,  1,   0,  0,  1,   0,  0,  1,
 
-      // left
-      0, 1,  0, 0,  1, 0,
-      1, 1,  0, 1,  1, 0,
+          // left
+          -1,  0,  0,   -1,  0,  0,   -1,  0,  0,
+          -1,  0,  0,   -1,  0,  0,   -1,  0,  0,
 
-      // right
-      1, 0,  0, 0,  0, 1,
-      1, 0,  0, 1,  1, 1,
+          // right
+           1,  0,  0,   1,  0,  0,   1,  0,  0,
+           1,  0,  0,   1,  0,  0,   1,  0,  0,
 
-      // top
-      1, 0,  0, 0,  0, 1,
-      1, 1,  1, 0,  0, 1,
+          // top
+           0,  1,  0,   0,  1,  0,   0,  1,  0,
+           0,  1,  0,   0,  1,  0,   0,  1,  0,
 
-      // bottom
-      0, 0,  1, 0,  0, 1,
-      1, 0,  1, 1,  0, 1,
-    ] )
+          // bottom
+           0, -1,  0,   0, -1,  0,   0, -1,  0,
+           0, -1,  0,   0, -1,  0,   0, -1,  0,
+        ] )
+        textureCoords = new Float32Array( [
+          // back
+          0, 0,  0, 1,  1, 1,
+          0, 0,  1, 1,  1, 0,
 
-    const matrix = new Matrix4().scale( x / 2, y / 2, z / 2 )
-    for ( let i = 0; i < vertices.length; i += 3 ) {
-      const vector = new Vector3( vertices[ i + 0 ], vertices[ i + 1 ], vertices[ i + 2 ] ).transformByMatrix( matrix )
+          // front
+          1, 1,  0, 1,  0, 0,
+          1, 0,  1, 1,  0, 0,
 
-      vertices[ i + 0 ] = vector.data[ 0 ]
-      vertices[ i + 1 ] = vector.data[ 1 ]
-      vertices[ i + 2 ] = vector.data[ 2 ]
+          // left
+          0, 1,  0, 0,  1, 0,
+          1, 1,  0, 1,  1, 0,
+
+          // right
+          1, 0,  0, 0,  0, 1,
+          1, 0,  0, 1,  1, 1,
+
+          // top
+          1, 0,  0, 0,  0, 1,
+          1, 1,  1, 0,  0, 1,
+
+          // bottom
+          0, 0,  1, 0,  0, 1,
+          1, 0,  1, 1,  0, 1,
+        ] )
+        break
     }
 
     model.info.multiplier = -1
@@ -1154,8 +1186,6 @@ export default class Renderer {
 
     const defaultPosZ = (gl.canvas.clientHeight / 2) / Math.tan( Math.PI / 6 )
 
-    console.log( defaultPosZ )
-
     this._fov = 60
     this._upVector = new Vector3( 0, 1, 0 )
     this._cameraPos = new Vector3( 0, 0, defaultPosZ )
@@ -1208,16 +1238,25 @@ export default class Renderer {
 
   /** Create model, create its VAO, and load it to renderer storage
    * @param {string} name
-   * @param {string} urlToObj
+   * @param {string} primitiveOrPath primitive name or path to .obj file
    */
-  async loadModel( name, urlToObj ) {
-    this._loadModel( name, await Model.create( urlToObj ) )
-  }
-  /** Load primitive it to renderer storage
-   * @param {"box"} nameOfPrimitive
-   */
-  loadBox( name, x, y=x, z=x ) {
-    this._loadModel( name, Model.createBox( x, y, z ) )
+  async loadModel( name, primitiveOrPath, x=50, y=x, z=x ) {
+    const matrix = new Matrix4().scale( x / 2, y / 2, z / 2 )
+    const model =/\.obj$/.test( primitiveOrPath )
+      ? await Model.create( primitiveOrPath )
+      : Model.createPrimitive( primitiveOrPath )
+
+    const { vertices } = model.data
+
+    for ( let i = 0; i < vertices.length; i += 3 ) {
+      const vector = new Vector3( vertices[ i + 0 ], vertices[ i + 1 ], vertices[ i + 2 ] ).transformByMatrix( matrix )
+
+      vertices[ i + 0 ] = vector.data[ 0 ]
+      vertices[ i + 1 ] = vector.data[ 1 ]
+      vertices[ i + 2 ] = vector.data[ 2 ]
+    }
+
+    this._loadModel( name, model )
   }
   /** Create texture from image and load it to renderer storage
    * @param {string} name
