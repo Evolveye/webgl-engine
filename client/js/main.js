@@ -12,15 +12,11 @@ gl.canvas.width = window.innerWidth
   let rY = 0
   let rZ = 0
 
-  ctx.setAspect( gl.canvas.clientWidth / gl.canvas.clientHeight )
-  ctx.setCameraPos( 0, 4, 10 )
-  ctx.setTargetPos( 0, 0, 0 )
-  ctx.setPointLightPos( 1.3, 2, 3 )
-
-  await ctx.loadModel( `barrel`, `./models/barrel.obj` )
-  await ctx.createTextureImg( `barrel`, `./models/barrel.png` )
-  ctx.loadBox( `box1`, 1, 1, 1 )
-  ctx.loadBox( `box2`, 1, 2, 3 )
+  // await ctx.loadModel( `barrel`, `./models/barrel.obj` )
+  // await ctx.createTextureImg( `barrel`, `./models/barrel.png` )
+  ctx.loadBox( `plane`, 100, 100, 0 )
+  ctx.loadBox( `box1`, 100 )
+  ctx.loadBox( `box2`, 100, 200, 300 )
   ctx.createTextureColor( `red`, `red` )
   ctx.createTextureColor( `green`, `green` )
 
@@ -46,15 +42,17 @@ gl.canvas.width = window.innerWidth
 
     ctx.useTexture( `red` ) // set diffuse
     ctx.useMaterial( `mat2` )
-    ctx.draw( `barrel` )
-    ctx.draw( `barrel`, { x:-2 } )
+    // ctx.draw( `barrel` )
+    // ctx.draw( `barrel`, { x:-200 } )
+    ctx.draw( `plane`, { x:50, rX } )
 
     ctx.useTexture( `green` ) // set diffuse
-    ctx.draw( `box1`, { x:-5, y:3, rX:(-rX * 2), rY, rZ } )
-    ctx.draw( `box2`, { y:-3, rX:(-rX * 2), rY:-rY, rZ } )
+    // ctx.draw( `box1`, { x:-500, y:300, rX:(-rX * 2), rY, rZ } )
+    // ctx.draw( `box2`, { y:-300, rX:(-rX * 2), rY:-rY, rZ } )
+    ctx.draw( `plane`, { x:-50 } )
 
-    ctx.useTexture( `barrel` ) // set diffuse
-    ctx.useMaterial( `mat1` )
-    ctx.draw( `barrel`, { x:2, rX, rY, rZ } )
+    // ctx.useTexture( `barrel` ) // set diffuse
+    // ctx.useMaterial( `mat1` )
+    // ctx.draw( `barrel`, { x:200, rX, rY, rZ } )
   }, 1000 / 60 )
 }()

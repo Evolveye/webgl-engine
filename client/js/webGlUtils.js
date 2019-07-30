@@ -882,10 +882,7 @@ export class Model {
       1, 0,  1, 1,  0, 1,
     ] )
 
-    let longestSide = x < y ? y : x
-    longestSide = longestSide < z ? z : longestSide
-
-    const matrix = new Matrix4().scale( x / longestSide, y / longestSide, z / longestSide )
+    const matrix = new Matrix4().scale( x / 2, y / 2, z / 2 )
     for ( let i = 0; i < vertices.length; i += 3 ) {
       const vector = new Vector3( vertices[ i + 0 ], vertices[ i + 1 ], vertices[ i + 2 ] ).transformByMatrix( matrix )
 
@@ -1155,14 +1152,16 @@ export default class Renderer {
     gl.clear( gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT )
     gl.viewport( 0, 0, gl.canvas.width, gl.canvas.height )
 
-    let canvas = document.body.querySelector( `canvas` )
+    const defaultPosZ = (gl.canvas.clientHeight / 2) / Math.tan( Math.PI / 6 )
+
+    console.log( defaultPosZ )
 
     this._fov = 60
     this._upVector = new Vector3( 0, 1, 0 )
-    this._cameraPos = new Vector3( 0, 1, 2 )
+    this._cameraPos = new Vector3( 0, 0, defaultPosZ )
     this._targetPos = new Vector3( 0, 0, 0 )
-    this._pointLightPos = new Vector3( 0, 1, 2 )
-    this._aspect = canvas.clientWidth / canvas.clientHeight
+    this._pointLightPos = new Vector3( 0, 0, defaultPosZ )
+    this._aspect = gl.canvas.clientWidth / gl.canvas.clientHeight
 
     /** @type {Map<string,{modelInfo:Any instances:Model.Instance[] vao:Any }> */
     this.models = new Map
@@ -1172,6 +1171,12 @@ export default class Renderer {
     this.textures = new Map
 
     this._matrices = null
+
+    gl.useProgram( this.cameraProgram )
+    gl.uniform3fv( this.uniforms.u_viewWorldPosition, this._cameraPos.data )
+    gl.uniform3fv( this.uniforms.u_lightWorldPosition, this._pointLightPos.data )
+
+    this._rebuildMatrices()
   }
 
   /** Rebuild matrices
@@ -1285,7 +1290,6 @@ export default class Renderer {
 
     gl.useProgram( cameraProgram )
     gl.uniform3fv( uniforms.u_lightWorldPosition, this._pointLightPos.data )
-
   }
   /** Set the "up" vector
    * @param {number} x
