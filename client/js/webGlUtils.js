@@ -445,19 +445,20 @@ export function createMatrices( {
   aspect,
   zNear,
   zFar,
-  worldRotateX = 0,
-  worldRotateY = 0,
-  worldRotateZ = 0
+  cameraRotate = [ 0, 0, 0 ],
+  worldRotate = [ 0, 0, 0 ],
 } ) {
   const projection = new Matrix4().setPerspective( degToRad( fieldOfViewRadians ), aspect, zNear, zFar )
   const camera = new Matrix4().lookAt( cameraPosition, targetPosition, up )
+    .rotateX( degToRad( cameraRotate[ 0 ] ) )
+    .rotateY( degToRad( cameraRotate[ 1 ] ) )
   const view = new Matrix4( camera ).inverse()
   const viewProjection = new Matrix4( projection ).multiply( view )
 
   const world = new Matrix4()
-    .rotateX( degToRad( worldRotateX ) )
-    .rotateY( degToRad( worldRotateY ) )
-    .rotateY( degToRad( worldRotateZ ) )
+    .rotateX( degToRad( worldRotate[ 0 ] ) )
+    .rotateY( degToRad( worldRotate[ 1 ] ) )
+    .rotateY( degToRad( worldRotate[ 2 ] ) )
   const worldInverse = new Matrix4( world ).inverse()
   const worldInverseTranspose = new Matrix4( worldInverse ).transpose()
   const worldViewProjection = new Matrix4( viewProjection ).multiply( world )
@@ -1270,6 +1271,7 @@ export default class Renderer {
     this._targetPos = new Vector3( 0, 0, 0 )
     this._pointLightPos = new Vector3( 0, 0, defaultPosZ )
     this._aspect = gl.canvas.clientWidth / gl.canvas.clientHeight
+    this._cameraRotation = [ 0, 0, 0 ]
 
     /** @type {Map<string,{modelInfo:Any instances:Model.Instance[] vao:Any }> */
     this.models = new Map
@@ -1293,6 +1295,7 @@ export default class Renderer {
     this._matrices = createMatrices( {
       cameraPosition: this._cameraPos,
       targetPosition: this._targetPos,
+      cameraRotate: this._cameraRotation,
       fieldOfViewRadians: this._fov,
       up: this._upVector,
 
@@ -1429,6 +1432,10 @@ export default class Renderer {
    */
   setFieldOfView( value ) {
     this._fieldOfView = value
+    this._rebuildMatrices()
+  }
+  rotateCamera( x=0, y=0, z=0 ) {
+    this._cameraRotation = [ x, y, z ]
     this._rebuildMatrices()
   }
 
