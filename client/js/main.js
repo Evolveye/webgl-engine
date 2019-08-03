@@ -1,4 +1,4 @@
-import Renderer from "./webGlUtils.js"
+import Renderer, { mapNum, degToRad } from "./webGlUtils.js"
 
 /** @type {WebGLRenderingContext} */
 const gl = document.querySelector( `.gl` ).getContext( `webgl2` )
@@ -13,14 +13,17 @@ gl.canvas.width = window.innerWidth
   let rZ = 0
 
   await ctx.loadModel( `barrel`, `./models/barrel.obj`, 100 )
-  ctx.loadModel( `box1`, `box` )
-  ctx.loadModel( `box2`, `box`, 50, 100, 150 )
-  ctx.loadModel( `plane1`, `plane` )
+  ctx.loadModel( `cube`, `box` )
+  ctx.loadModel( `box`, `box`, 50, 100, 150 )
+  ctx.loadModel( `plane`, `plane` )
+  ctx.loadModel( `sphere`, `sphere`, 100 )
 
+  // await ctx.createTextureImg( `UVMap`, `./models/UVMap.png` )
   await ctx.createTextureImg( `barrel`, `./models/barrel.png` )
   ctx.createTextureColor( `red`, `red` )
   ctx.createTextureColor( `green`, `green` )
   ctx.createTextureColor( `white`, `white` )
+  ctx.createTextureColor( `blue`, `blue` )
 
   ctx.createMaterial( `mat1`, {
     lightColor: [ 1, 1, 1, 1 ],
@@ -42,21 +45,42 @@ gl.canvas.width = window.innerWidth
     rY += 2 * .5
     rZ += 2 * 1
 
+    // ctx.useTexture( `white` )
+    // const total = 8
+    // const r = 300
+
+    // for ( let i = 0; i < total + 1; i++ ) {
+    //   const lon = mapNum( i, 0, total, 0, Math.PI * 2 )
+    //   // const jLimit = i != 0 && i != total ? total + 1 : 1
+
+    //   for ( let j = 0; j < total + 1; j++ ) {
+    //     const lat = mapNum( j, 0, total, 0, Math.PI )
+
+    //     const x = r * Math.sin( lon ) * Math.cos( lat )
+    //     const y = r * Math.sin( lon ) * Math.sin( lat )
+    //     const z = r * Math.cos( lon )
+
+    //     ctx.draw( `mini box`, { x, y, z } )
+    //   }
+    // }
+
     ctx.useMaterial( `mat2` )
     ctx.useTexture( `red` )
     ctx.draw( `barrel` )
     ctx.draw( `barrel`, { x:-200 } )
+    ctx.useTexture( `blue` )
+    ctx.draw( `sphere`, { y:200, x:(Math.sin( degToRad( rX ) ) * 100) } )
 
     ctx.useTexture( `green` )
-    ctx.draw( `box1`, { x:-500, y:200, rX:(-rX * 2), rY, rZ } )
-    ctx.draw( `box2`, { y:-200, rX:(-rX * 2), rY:-rY, rZ } )
+    ctx.draw( `cube`, { x:-500, y:200, rX:(-rX * 2), rY, rZ } )
+    ctx.draw( `box`, { y:-200, rX:(-rX * 2), rY:-rY, rZ } )
 
     ctx.useTexture( `white` )
-    ctx.draw( `plane1`, { y:-200, x:-400, rX:(-rX / 2) } )
+    ctx.draw( `plane`, { y:-200, x:-400, rX:(-rX / 2) } )
 
     ctx.useMaterial( `mat1` )
     ctx.useTexture( `barrel` )
     ctx.draw( `barrel`, { x:200, rX, rY, rZ } )
-    ctx.draw( `plane1`, { y:-200, x:-200, rX:(-rX / 2) } )
+    ctx.draw( `plane`, { y:-200, x:-300, rX:(-rX / 2) } )
   }, 1000 / 60 )
 }()

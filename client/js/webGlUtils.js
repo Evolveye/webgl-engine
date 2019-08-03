@@ -1,6 +1,12 @@
 /** transform values in degrees to radians
  * @param {number} v
  */
+export function mapNum( number, rangeStart, rangeEnd, targetRangeStart, targetRangeEnd ) {
+  return (number - rangeStart) / (rangeEnd - rangeStart) * (targetRangeEnd - targetRangeStart) + targetRangeStart
+}
+/** transform values in degrees to radians
+ * @param {number} v
+ */
 export function degToRad( v ) {
   return v * Math.PI / 180
 }
@@ -924,6 +930,73 @@ export class Model {
           1, 0,  1, 1,  0, 1,
         ] )
         break
+
+      case `sphere`: {
+        const total = 100
+        const totalPlus1 = total + 1
+        const globe = Array.from( { length:totalPlus1 } ).map( () => [] )
+        // const r = 1
+
+        vertices = []
+        normals = []
+        textureCoords = []
+
+        for ( let i = 0; i < totalPlus1; i++ ) {
+          const lon = mapNum( i, 0, total, 0, Math.PI * 2 )
+
+          for ( let j = 0; j < totalPlus1; j++ ) {
+            const lat = mapNum( j, 0, total, 0, Math.PI )
+
+            const x = /* r * */ Math.sin( lon ) * Math.cos( lat )
+            const y = /* r * */ Math.sin( lon ) * Math.sin( lat )
+            const z = /* r * */ Math.cos( lon )
+
+            globe[ i ][ j ] = { x, y, z }
+          }
+        }
+
+        for ( let i = 1; i < totalPlus1; i++ ) {
+          for ( let j = 0; j < total; j++ ) {
+            const verts = []
+
+            if ( i < total / 2 + 1 ) {
+              verts.push(
+                globe[ i     ][ j     ],
+                globe[ i     ][ j + 1 ],
+                globe[ i - 1 ][ j     ],
+              )
+              if ( i != 1 ) verts.push(
+                globe[ i - 1 ][ j     ],
+                globe[ i     ][ j + 1 ],
+                globe[ i - 1 ][ j + 1 ],
+              )
+            }
+            else {
+              verts.push(
+                globe[ i - 1 ][ j     ],
+                globe[ i     ][ j + 1 ],
+                globe[ i     ][ j     ],
+              )
+              if ( i != 1 ) verts.push(
+                globe[ i - 1 ][ j + 1 ],
+                globe[ i     ][ j + 1 ],
+                globe[ i - 1 ][ j     ],
+              )
+            }
+
+            for ( const v of verts ) {
+              vertices.push( v.x, v.y, v.z )
+              normals.push( v.x /* / r */, v.y /* / r */, v.z /* / r */ )
+              textureCoords.push( 0, 0 )
+            }
+          }
+        }
+
+        vertices = new Float32Array( vertices )
+        normals = new Float32Array( normals )
+        textureCoords = new Float32Array( textureCoords )
+        break
+      }
     }
 
     Model.flipTextureCoords( textureCoords )
@@ -939,7 +1012,6 @@ export class Model {
     model.data.vertices = vertices
     model.data.normals = normals
     model.data.indices = new Float32Array( new Array( vertices.length / 3 ) )
-
 
     return model
   }
@@ -1406,6 +1478,9 @@ export default class Renderer {
     gl.uniformMatrix4fv( uniforms.u_worldInverseTranspose, false, worldInverseTranspose.data )
     gl.uniformMatrix4fv( uniforms.u_world, false, world.data )
 
+    // gl.drawArrays( gl.LINES, 0, modelInfo.indices )
     gl.drawArrays( gl.TRIANGLES, 0, modelInfo.indices )
+    // gl.drawArrays( gl.TRIANGLE_FAN, 0, modelInfo.indices )
+    // gl.drawArrays( gl.TRIANGLE_STRIP, 0, modelInfo.indices )
   }
 }
