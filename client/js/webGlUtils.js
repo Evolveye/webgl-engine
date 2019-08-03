@@ -932,7 +932,7 @@ export class Model {
         break
 
       case `sphere`: {
-        const total = 100
+        const total = 10
         const totalPlus1 = total + 1
         const globe = Array.from( { length:totalPlus1 } ).map( () => [] )
         // const r = 1
@@ -1460,7 +1460,7 @@ export default class Renderer {
     gl.uniform1f( uniforms.u_specularFactor, material.specularFactor )
   }
 
-  draw( modelName, { x=0, y=0, z=0, rX=0, rY=0, rZ=0 }={} ) {
+  draw( modelName, { mesh=false, x=0, y=0, z=0, rX=0, rY=0, rZ=0 }={} ) {
     const { gl, _matrices, models, cameraProgram, uniforms } = this
     const { vao, modelInfo } = models.get( modelName )
     const world = new Matrix4( _matrices.world )
@@ -1479,7 +1479,8 @@ export default class Renderer {
     gl.uniformMatrix4fv( uniforms.u_world, false, world.data )
 
     // gl.drawArrays( gl.LINES, 0, modelInfo.indices )
-    gl.drawArrays( gl.TRIANGLES, 0, modelInfo.indices )
+    gl.drawArrays( mesh ? gl.LINE_STRIP : gl.TRIANGLES, 0, modelInfo.indices )
+    // gl.drawArrays( gl.TRIANGLES, 0, modelInfo.indices )
     // gl.drawArrays( gl.TRIANGLE_FAN, 0, modelInfo.indices )
     // gl.drawArrays( gl.TRIANGLE_STRIP, 0, modelInfo.indices )
   }

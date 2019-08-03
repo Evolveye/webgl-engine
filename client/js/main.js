@@ -66,7 +66,7 @@ gl.canvas.width = window.innerWidth
 
     ctx.useMaterial( `mat2` )
     ctx.useTexture( `red` )
-    ctx.draw( `barrel` )
+    ctx.draw( `barrel`, { mesh:true, rX:45 } )
     ctx.draw( `barrel`, { x:-200 } )
     ctx.useTexture( `blue` )
     ctx.draw( `sphere`, { y:200, x:(Math.sin( degToRad( rX ) ) * 100) } )
