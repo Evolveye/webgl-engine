@@ -449,8 +449,8 @@ export function createMatrices( {
   worldRotate = [ 0, 0, 0 ],
 } ) {
   const projection = new Matrix4().setPerspective( degToRad( fieldOfViewRadians ), aspect, zNear, zFar )
-  .rotateX( degToRad( cameraRotate[ 0 ] ) )
-  .rotateY( degToRad( cameraRotate[ 1 ] ) )
+    .rotateX( degToRad( cameraRotate[ 0 ] ) )
+    .rotateY( degToRad( cameraRotate[ 1 ] ) )
   const camera = new Matrix4().lookAt( cameraPosition, targetPosition, up )
   const view = new Matrix4( camera ).inverse()
   const viewProjection = new Matrix4( projection ).multiply( view )
@@ -1434,9 +1434,21 @@ export default class Renderer {
     this._fieldOfView = value
     this._rebuildMatrices()
   }
-  rotateCamera( x=0, y=0, z=0 ) {
+  rotateCamera( x, y=0, z=0 ) {
     this._cameraRotation = [ x, y, z ]
     this._rebuildMatrices()
+  }
+  moveCamera( x, y=0, z=0 ) {
+    const { gl, uniforms, cameraProgram } = this
+    const [ cX, cY, cZ ] = this._cameraPos.data
+    const [ tX, tY, tZ ] = this._targetPos.data
+
+    this._cameraPos = new Vector3( x + cX, y + cY, z + cZ )
+    this._targetPos = new Vector3( x + tX, y + tY, z + tZ )
+    this._rebuildMatrices()
+
+    gl.useProgram( cameraProgram )
+    gl.uniform3fv( uniforms.u_viewWorldPosition, this._cameraPos.data )
   }
 
   /** Active the texture

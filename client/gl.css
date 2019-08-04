@@ -37,3 +37,10 @@ body {
   right: 0;
   top: 0;
 }
+
+.info {
+  position: absolute;
+  left: 10px;
+  bottom: 10px;
+  color: #555;
+}

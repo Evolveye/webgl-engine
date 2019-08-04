@@ -1,10 +1,13 @@
 import Renderer, { mapNum, degToRad } from "./webGlUtils.js"
+import Keys from "./keys.js"
 
 /** @type {WebGLRenderingContext} */
 const gl = document.querySelector( `.gl` ).getContext( `webgl2` )
+const keys = new Keys
 let rX = 0
 let rY = 0
 let rZ = 0
+let speed = 3
 const mouse = {
   x: null,
   y: null,
@@ -20,6 +23,8 @@ gl.canvas.width = window.innerWidth
 const ctx = new Renderer( gl )
 
 ~async function setup() {
+  // keys.get( 32 ).interval = .5
+
   await ctx.loadModel( `barrel`, `./models/barrel.obj`, 100 )
   ctx.loadModel( `cube`, `box` )
   ctx.loadModel( `box`, `box`, 50, 100, 150 )
@@ -55,6 +60,16 @@ function draw() {
   rX += 2 * .75
   rY += 2 * .5
   rZ += 2 * 1
+
+  const xFactor = Math.sin( mouse.rY * mouse.movingFactor * Math.PI / 180 )
+  const zFactor = Math.cos( mouse.rY * mouse.movingFactor * Math.PI / 180 )
+
+  if ( keys.get( `left`,  `a` ).triggered ) ctx.moveCamera( -speed * zFactor, 0, -speed * xFactor )
+  if ( keys.get( `up`,    `w` ).triggered ) ctx.moveCamera(  speed * xFactor, 0, -speed * zFactor )
+  if ( keys.get( `right`, `d` ).triggered ) ctx.moveCamera(  speed * zFactor, 0,  speed * xFactor )
+  if ( keys.get( `down`,  `s` ).triggered ) ctx.moveCamera( -speed * xFactor, 0,  speed * zFactor )
+  if ( keys.get( `shift` ).triggered && keys.get( `space` ).triggered ) ctx.moveCamera( 0, -speed, 0 )
+  else if ( keys.get( `space` ).triggered ) ctx.moveCamera( 0, speed, 0 )
 
   // ctx.useTexture( `white` )
   // const total = 8
@@ -100,6 +115,8 @@ function draw() {
   setTimeout( () => requestAnimationFrame( () => draw() ), 1000 / 60 )
 }
 
+addEventListener( `keydown`, ({ keyCode }) => keys.get( keyCode ).pressed = true )
+addEventListener( `keyup`,   ({ keyCode }) => keys.get( keyCode ).pressed = false )
 addEventListener( `mousedown`, ({ clientX, clientY }) => {
   mouse.clicked = true
   mouse.x = clientX
@@ -109,11 +126,13 @@ addEventListener( `mouseup`, () => mouse.clicked = false )
 addEventListener( `mousemove`, ({ clientX, clientY }) => {
   if ( !mouse.clicked ) return
   if ( mouse.x !== null ) {
-    mouse.rX += mouse.y - clientY
-    mouse.rY += mouse.x - clientX
+    mouse.rX -= mouse.y - clientY
+    mouse.rY -= mouse.x - clientX
 
     ctx.rotateCamera( mouse.rX * mouse.movingFactor, mouse.rY * mouse.movingFactor )
   }
   mouse.x = clientX
   mouse.y = clientY
 } )
+
+window.mouse = mouse
