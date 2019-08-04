@@ -449,9 +449,9 @@ export function createMatrices( {
   worldRotate = [ 0, 0, 0 ],
 } ) {
   const projection = new Matrix4().setPerspective( degToRad( fieldOfViewRadians ), aspect, zNear, zFar )
+  .rotateX( degToRad( cameraRotate[ 0 ] ) )
+  .rotateY( degToRad( cameraRotate[ 1 ] ) )
   const camera = new Matrix4().lookAt( cameraPosition, targetPosition, up )
-    .rotateX( degToRad( cameraRotate[ 0 ] ) )
-    .rotateY( degToRad( cameraRotate[ 1 ] ) )
   const view = new Matrix4( camera ).inverse()
   const viewProjection = new Matrix4( projection ).multiply( view )
 

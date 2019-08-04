@@ -5,7 +5,14 @@ const gl = document.querySelector( `.gl` ).getContext( `webgl2` )
 let rX = 0
 let rY = 0
 let rZ = 0
-const mouse = { x:null, y:null, rX:null, rY:null, movingFactor:.2 }
+const mouse = {
+  x: null,
+  y: null,
+  rX: null,
+  rY: null,
+  clicked: null,
+  movingFactor: .2,
+}
 
 gl.canvas.height = window.innerHeight
 gl.canvas.width = window.innerWidth
@@ -82,6 +89,7 @@ function draw() {
 
   ctx.useTexture( `white` )
   ctx.draw( `plane`, { y:-200, x:-400, rX:(-rX / 2) } )
+  ctx.draw( `box`, { x:600, z:600, rX:(-rX * 2), rY:-rY, rZ } )
 
   ctx.useMaterial( `mat1` )
 
@@ -92,14 +100,20 @@ function draw() {
   setTimeout( () => requestAnimationFrame( () => draw() ), 1000 / 60 )
 }
 
+addEventListener( `mousedown`, ({ clientX, clientY }) => {
+  mouse.clicked = true
+  mouse.x = clientX
+  mouse.y = clientY
+} )
+addEventListener( `mouseup`, () => mouse.clicked = false )
 addEventListener( `mousemove`, ({ clientX, clientY }) => {
+  if ( !mouse.clicked ) return
   if ( mouse.x !== null ) {
     mouse.rX += mouse.y - clientY
     mouse.rY += mouse.x - clientX
 
     ctx.rotateCamera( mouse.rX * mouse.movingFactor, mouse.rY * mouse.movingFactor )
   }
-
   mouse.x = clientX
   mouse.y = clientY
 } )
