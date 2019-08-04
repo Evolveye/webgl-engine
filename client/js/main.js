@@ -23,8 +23,6 @@ gl.canvas.width = window.innerWidth
 const ctx = new Renderer( gl )
 
 ~async function setup() {
-  // keys.get( 32 ).interval = .5
-
   await ctx.loadModel( `barrel`, `./models/barrel.obj`, 100 )
   ctx.loadModel( `cube`, `box` )
   ctx.loadModel( `box`, `box`, 50, 100, 150 )
@@ -32,6 +30,7 @@ const ctx = new Renderer( gl )
   ctx.loadModel( `sphere`, `sphere`, 100 )
 
   // await ctx.createTextureImg( `UVMap`, `./models/UVMap.png` )
+  // ctx.useTexture( `UVMap` )
   await ctx.createTextureImg( `barrel`, `./models/barrel.png` )
   ctx.createTextureColor( `red`, `red` )
   ctx.createTextureColor( `green`, `green` )
@@ -71,25 +70,6 @@ function draw() {
   if ( keys.get( `shift` ).triggered ) ctx.moveCamera( 0, -speed, 0 )
   if ( keys.get( `space` ).triggered ) ctx.moveCamera( 0, speed, 0 )
 
-  // ctx.useTexture( `white` )
-  // const total = 8
-  // const r = 300
-
-  // for ( let i = 0; i < total + 1; i++ ) {
-  //   const lon = mapNum( i, 0, total, 0, Math.PI * 2 )
-  //   // const jLimit = i != 0 && i != total ? total + 1 : 1
-
-  //   for ( let j = 0; j < total + 1; j++ ) {
-  //     const lat = mapNum( j, 0, total, 0, Math.PI )
-
-  //     const x = r * Math.sin( lon ) * Math.cos( lat )
-  //     const y = r * Math.sin( lon ) * Math.sin( lat )
-  //     const z = r * Math.cos( lon )
-
-  //     ctx.draw( `mini box`, { x, y, z } )
-  //   }
-  // }
-
   ctx.useMaterial( `mat2` )
 
   ctx.useTexture( `red` )
@@ -105,6 +85,7 @@ function draw() {
   ctx.useTexture( `white` )
   ctx.draw( `plane`, { y:-200, x:-400, rX:(-rX / 2) } )
   ctx.draw( `box`, { x:600, z:600, rX:(-rX * 2), rY:-rY, rZ } )
+  ctx.draw( `cube`, { x:200, y:-200, rX:(-rZ * 2), rY:-rX, rZ, mesh:true } )
 
   ctx.useMaterial( `mat1` )
 
@@ -134,5 +115,3 @@ addEventListener( `mousemove`, ({ clientX, clientY }) => {
   mouse.x = clientX
   mouse.y = clientY
 } )
-
-window.mouse = mouse

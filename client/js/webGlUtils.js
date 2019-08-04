@@ -933,7 +933,7 @@ export class Model {
         break
 
       case `sphere`: {
-        const total = 10
+        const total = 100
         const totalPlus1 = total + 1
         const globe = Array.from( { length:totalPlus1 } ).map( () => [] )
         // const r = 1
