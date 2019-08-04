@@ -68,8 +68,8 @@ function draw() {
   if ( keys.get( `up`,    `w` ).triggered ) ctx.moveCamera(  speed * xFactor, 0, -speed * zFactor )
   if ( keys.get( `right`, `d` ).triggered ) ctx.moveCamera(  speed * zFactor, 0,  speed * xFactor )
   if ( keys.get( `down`,  `s` ).triggered ) ctx.moveCamera( -speed * xFactor, 0,  speed * zFactor )
-  if ( keys.get( `shift` ).triggered && keys.get( `space` ).triggered ) ctx.moveCamera( 0, -speed, 0 )
-  else if ( keys.get( `space` ).triggered ) ctx.moveCamera( 0, speed, 0 )
+  if ( keys.get( `shift` ).triggered ) ctx.moveCamera( 0, -speed, 0 )
+  if ( keys.get( `space` ).triggered ) ctx.moveCamera( 0, speed, 0 )
 
   // ctx.useTexture( `white` )
   // const total = 8
