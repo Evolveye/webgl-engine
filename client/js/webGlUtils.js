@@ -1300,8 +1300,8 @@ export default class Renderer {
       up: this._upVector,
 
       aspect: this._aspect,
-      zNear: 1,
-      zFar: 1000
+      zNear: .1,
+      zFar: 1500
     } )
   }
   /** Load model to renderer storage */

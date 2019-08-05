@@ -7,14 +7,14 @@ const keys = new Keys
 let rX = 0
 let rY = 0
 let rZ = 0
-let speed = 3
+let speed = 5
 const mouse = {
   x: null,
   y: null,
   rX: null,
   rY: null,
   clicked: null,
-  movingFactor: .2,
+  movingFactor: .35,
 }
 
 gl.canvas.height = window.innerHeight
