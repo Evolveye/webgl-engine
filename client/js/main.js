@@ -1,6 +1,13 @@
 import Renderer, { mapNum, degToRad } from "./webGlUtils.js"
 import Keys from "./keys.js"
 
+
+/*
+ TODO: better mesh drawing
+ TODO: errors handling
+*/
+
+
 /** @type {WebGLRenderingContext} */
 const gl = document.querySelector( `.gl` ).getContext( `webgl2` )
 const keys = new Keys
@@ -24,6 +31,7 @@ const ctx = new Renderer( gl )
 
 ~async function setup() {
   await ctx.loadModel( `barrel`, `./models/barrel.obj`, 100 )
+  // await ctx.loadModel( `bunny`, `./models/bunny.obj`, 100 )
   ctx.loadModel( `cube`, `box` )
   ctx.loadModel( `box`, `box`, 50, 100, 150 )
   ctx.loadModel( `plane`, `plane` )
@@ -56,9 +64,9 @@ const ctx = new Renderer( gl )
 }()
 
 function draw() {
-  rX += 2 * .75
-  rY += 2 * .5
-  rZ += 2 * 1
+  rX += 1.5 * .75
+  rY += 1.5 * .5
+  rZ += 1.5 * 1
 
   const xFactor = Math.sin( mouse.rY * mouse.movingFactor * Math.PI / 180 )
   const zFactor = Math.cos( mouse.rY * mouse.movingFactor * Math.PI / 180 )
@@ -78,6 +86,7 @@ function draw() {
   ctx.useTexture( `blue` )
   ctx.draw( `sphere`, { y:200, x:(Math.sin( degToRad( rX ) ) * 100) } )
 
+  ctx.useMaterial( `mat2` )
   ctx.useTexture( `green` )
   ctx.draw( `cube`, { x:-500, y:200, rX:(-rX * 2), rY, rZ } )
   ctx.draw( `box`, { y:-200, rX:(-rX * 2), rY:-rY, rZ } )
@@ -86,6 +95,7 @@ function draw() {
   ctx.draw( `plane`, { y:-200, x:-400, rX:(-rX / 2) } )
   ctx.draw( `box`, { x:600, z:600, rX:(-rX * 2), rY:-rY, rZ } )
   ctx.draw( `cube`, { x:200, y:-200, rX:(-rZ * 2), rY:-rX, rZ, mesh:true } )
+  // ctx.draw( `bunny`, { x:-600, z:600, rZ, rX:-90 } )
 
   ctx.useMaterial( `mat1` )
 
@@ -115,3 +125,39 @@ addEventListener( `mousemove`, ({ clientX, clientY }) => {
   mouse.x = clientX
   mouse.y = clientY
 } )
+
+
+// /** @type {CanvasRenderingContext2D} */
+// const ctx2d = document.querySelector( `.gl` ).getContext( `2d` )
+// ctx2d.canvas.height = window.innerHeight
+// ctx2d.canvas.width = window.innerWidth
+
+// let jump = .1
+// const points = [
+//   { x:500, y:300 },
+//   { x:500, y:300 },
+//   { x:500, y:400 },
+//   // { x:600, y:600 },
+//   { x:700, y:400 },
+//   { x:700, y:300 },
+// ]
+
+// ctx2d.moveTo( points[ 0 ].x, points[ 0 ].y )
+
+// for ( let t = jump, pts = points.length - 1; t <= 1; t += jump ) {
+//   let x = 0
+//   let y = 0
+
+//   points.forEach( (p, i) => {
+//     let num = (1 - t)**(pts - i) * t**i * (i == 0 || i == pts ? 1 : pts)
+
+//     x += p.x * num
+//     y += p.y * num
+//   } )
+
+//   ctx2d.lineTo( x, y )
+// }
+
+// ctx2d.lineWidth = 3
+// ctx2d.strokeStyle = `red`
+// ctx2d.stroke()

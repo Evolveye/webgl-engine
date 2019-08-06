@@ -720,24 +720,25 @@ export class Model {
           .forEach( element => {
             if ( !faces.includes( element ) ) {
               facesElements.push( element )
-              let nums = element.match( /(?<vertex>\d+)\/(?:(?<texture>\d+))?\/?(?<normal>\d+)/ ).groups
+              const { vertex, texture, normal } = element
+                .match( /(?<vertex>\d+)(?:\/(?<texture>\d+)?(?:\/(?<normal>\d+))?)?/ )
+                .groups
 
-              nums.color = [
-                textureCoords[ nums.texture - 1 ][ 0 ] * texWidth,
-                textureCoords[ nums.texture - 1 ][ 1 ] * texHeight
-              ].map( pos => {
-                let i = 1
+              model.data.normals.push( ...(normal ? normals[ normal - 1 ] : [ 0, 0, 0 ]) )
+              if ( !texture ) model.data.textureCoords.push( 0, 0 )
+              else {
+                const color = [
+                  textureCoords[ texture - 1 ][ 0 ] * texWidth,
+                  textureCoords[ texture - 1 ][ 1 ] * texHeight
+                ]
+                .map( pos => Math.floor( pos ) )
+                .reduce( (x, y) => x + y * texWidth )
 
-                while ( pos > i )
-                  i++
+                model.data.textureCoords.push( ...textureCoords[ texture - 1 ] )
+                model.data.colors.push( ...texColors[ color ] )
+              }
 
-                return i - 1
-              } ).reduce( (x, y) => x + y * texWidth )
-
-              model.data.textureCoords.push( ...textureCoords[ nums.texture - 1 ] )
-              model.data.vertices.push( ...vertices[ nums.vertex - 1 ].map( coord => coord / biggestVert ) )
-              model.data.normals.push( ...normals[ nums.normal - 1 ] )
-              model.data.colors.push( ...texColors[ nums.color ] )
+              model.data.vertices.push( ...vertices[ vertex - 1 ].map( coord => coord / biggestVert ) )
             }
 
             model.data.indices.push( facesElements.indexOf( element ) )
@@ -799,6 +800,8 @@ export class Model {
     model.data.vertices = new Float32Array( model.data.vertices )
     model.data.normals = new Float32Array( model.data.normals )
     model.data.indices = new Float32Array( model.data.indices )
+
+    console.log( model )
 
     return model
   }
@@ -1028,9 +1031,9 @@ export class Model {
       .map( element => element.trim() )
 
     for ( const line of lines ) {
-      const { prefix, value } = line.match( /^(?<prefix>\S+) +(?<value>.+)$/ ).groups
+      const { prefix, value } = line.match( /^(?<prefix>\S+)(?: +(?<value>.+))?$/ ).groups
 
-      yield [ prefix, value ]
+      if ( prefix != `#` ) yield [ prefix, value ]
     }
   }
 }
@@ -1217,8 +1220,6 @@ export class Program {
             ) ).rgb,
             diffuseColor.a
           );
-
-          // outColor = vec4( .2, .8, .2, 1 );
         }
       `
     },
@@ -1497,10 +1498,6 @@ export default class Renderer {
     gl.uniformMatrix4fv( uniforms.u_worldInverseTranspose, false, worldInverseTranspose.data )
     gl.uniformMatrix4fv( uniforms.u_world, false, world.data )
 
-    // gl.drawArrays( gl.LINES, 0, modelInfo.indices )
     gl.drawArrays( mesh ? gl.LINE_STRIP : gl.TRIANGLES, 0, modelInfo.indices )
-    // gl.drawArrays( gl.TRIANGLES, 0, modelInfo.indices )
-    // gl.drawArrays( gl.TRIANGLE_FAN, 0, modelInfo.indices )
-    // gl.drawArrays( gl.TRIANGLE_STRIP, 0, modelInfo.indices )
   }
 }
