@@ -826,116 +826,113 @@ export class Model {
     /** @type {Float32Array} */
     let textureCoords
 
-    switch ( name ) {
-      case `plane`:
-        vertices = new Float32Array( [
-          // back
-          -1, -1, 0,   -1,  1, 0,    1,  1, 0,
-          -1, -1, 0,    1,  1, 0,    1, -1, 0,
+    if ( name == `plane` ) {
+      vertices = new Float32Array( [
+        // back
+        -1, -1, 0,   -1,  1, 0,    1,  1, 0,
+        -1, -1, 0,    1,  1, 0,    1, -1, 0,
 
-          // front0
-           1,  1, 0,   -1,  1, 0,   -1, -1, 0,
-           1, -1, 0,    1,  1, 0,   -1, -1, 0,
-        ] )
-        normals = new Float32Array( [
-          // back
-           0,  0, -1,   0,  0, -1,   0,  0, -1,
-           0,  0, -1,   0,  0, -1,   0,  0, -1,
+        // front0
+         1,  1, 0,   -1,  1, 0,   -1, -1, 0,
+         1, -1, 0,    1,  1, 0,   -1, -1, 0,
+      ] )
+      normals = new Float32Array( [
+        // back
+         0,  0, -1,   0,  0, -1,   0,  0, -1,
+         0,  0, -1,   0,  0, -1,   0,  0, -1,
 
-          // front
-           0,  0,  1,   0,  0,  1,   0,  0,  1,
-           0,  0,  1,   0,  0,  1,   0,  0,  1,
-        ] )
-        textureCoords = new Float32Array( [
-          // back
-          0, 0,  0, 1,  1, 1,
-          0, 0,  1, 1,  1, 0,
+        // front
+         0,  0,  1,   0,  0,  1,   0,  0,  1,
+         0,  0,  1,   0,  0,  1,   0,  0,  1,
+      ] )
+      textureCoords = new Float32Array( [
+        // back
+        0, 0,  0, 1,  1, 1,
+        0, 0,  1, 1,  1, 0,
 
-          // front
-          1, 1,  0, 1,  0, 0,
-          1, 0,  1, 1,  0, 0,
-        ] )
-        break
+        // front
+        1, 1,  0, 1,  0, 0,
+        1, 0,  1, 1,  0, 0,
+      ] )
+    }
+    else if ( name == `box` ) {
+      vertices = new Float32Array( [
+        // back
+        -1, -1, -1,   -1,  1, -1,    1,  1, -1,
+        -1, -1, -1,    1,  1, -1,    1, -1, -1,
 
-      case `box`:
-        vertices = new Float32Array( [
-          // back
-          -1, -1, -1,   -1,  1, -1,    1,  1, -1,
-          -1, -1, -1,    1,  1, -1,    1, -1, -1,
+        // front
+         1,  1,  1,   -1,  1,  1,   -1, -1,  1,
+         1, -1,  1,    1,  1,  1,   -1, -1,  1,
 
-          // front
-           1,  1,  1,   -1,  1,  1,   -1, -1,  1,
-           1, -1,  1,    1,  1,  1,   -1, -1,  1,
+        // left
+        -1,  1, -1,   -1, -1, -1,   -1, -1,  1,
+        -1,  1,  1,   -1,  1, -1,   -1, -1,  1,
 
-          // left
-          -1,  1, -1,   -1, -1, -1,   -1, -1,  1,
-          -1,  1,  1,   -1,  1, -1,   -1, -1,  1,
+        // right
+         1, -1,  1,    1, -1, -1,    1,  1, -1,
+         1, -1,  1,    1,  1, -1,    1,  1,  1,
 
-          // right
-           1, -1,  1,    1, -1, -1,    1,  1, -1,
-           1, -1,  1,    1,  1, -1,    1,  1,  1,
+        // top
+         1,  1, -1,   -1,  1, -1,   -1,  1,  1,
+         1,  1,  1,    1,  1, -1,   -1,  1,  1,
 
-          // top
-           1,  1, -1,   -1,  1, -1,   -1,  1,  1,
-           1,  1,  1,    1,  1, -1,   -1,  1,  1,
+        // bottom
+        -1, -1, -1,    1, -1, -1,   -1, -1,  1,
+         1, -1, -1,    1, -1,  1,   -1, -1,  1,
+      ] )
+      normals = new Float32Array( [
+        // back
+         0,  0, -1,   0,  0, -1,   0,  0, -1,
+         0,  0, -1,   0,  0, -1,   0,  0, -1,
 
-          // bottom
-          -1, -1, -1,    1, -1, -1,   -1, -1,  1,
-           1, -1, -1,    1, -1,  1,   -1, -1,  1,
-        ] )
-        normals = new Float32Array( [
-          // back
-           0,  0, -1,   0,  0, -1,   0,  0, -1,
-           0,  0, -1,   0,  0, -1,   0,  0, -1,
+        // front
+         0,  0,  1,   0,  0,  1,   0,  0,  1,
+         0,  0,  1,   0,  0,  1,   0,  0,  1,
 
-          // front
-           0,  0,  1,   0,  0,  1,   0,  0,  1,
-           0,  0,  1,   0,  0,  1,   0,  0,  1,
+        // left
+        -1,  0,  0,   -1,  0,  0,   -1,  0,  0,
+        -1,  0,  0,   -1,  0,  0,   -1,  0,  0,
 
-          // left
-          -1,  0,  0,   -1,  0,  0,   -1,  0,  0,
-          -1,  0,  0,   -1,  0,  0,   -1,  0,  0,
+        // right
+         1,  0,  0,   1,  0,  0,   1,  0,  0,
+         1,  0,  0,   1,  0,  0,   1,  0,  0,
 
-          // right
-           1,  0,  0,   1,  0,  0,   1,  0,  0,
-           1,  0,  0,   1,  0,  0,   1,  0,  0,
+        // top
+         0,  1,  0,   0,  1,  0,   0,  1,  0,
+         0,  1,  0,   0,  1,  0,   0,  1,  0,
 
-          // top
-           0,  1,  0,   0,  1,  0,   0,  1,  0,
-           0,  1,  0,   0,  1,  0,   0,  1,  0,
+        // bottom
+         0, -1,  0,   0, -1,  0,   0, -1,  0,
+         0, -1,  0,   0, -1,  0,   0, -1,  0,
+      ] )
+      textureCoords = new Float32Array( [
+        // back
+        0, 0,  0, 1,  1, 1,
+        0, 0,  1, 1,  1, 0,
 
-          // bottom
-           0, -1,  0,   0, -1,  0,   0, -1,  0,
-           0, -1,  0,   0, -1,  0,   0, -1,  0,
-        ] )
-        textureCoords = new Float32Array( [
-          // back
-          0, 0,  0, 1,  1, 1,
-          0, 0,  1, 1,  1, 0,
+        // front
+        1, 1,  0, 1,  0, 0,
+        1, 0,  1, 1,  0, 0,
 
-          // front
-          1, 1,  0, 1,  0, 0,
-          1, 0,  1, 1,  0, 0,
+        // left
+        0, 1,  0, 0,  1, 0,
+        1, 1,  0, 1,  1, 0,
 
-          // left
-          0, 1,  0, 0,  1, 0,
-          1, 1,  0, 1,  1, 0,
+        // right
+        1, 0,  0, 0,  0, 1,
+        1, 0,  0, 1,  1, 1,
 
-          // right
-          1, 0,  0, 0,  0, 1,
-          1, 0,  0, 1,  1, 1,
+        // top
+        1, 0,  0, 0,  0, 1,
+        1, 1,  1, 0,  0, 1,
 
-          // top
-          1, 0,  0, 0,  0, 1,
-          1, 1,  1, 0,  0, 1,
-
-          // bottom
-          0, 0,  1, 0,  0, 1,
-          1, 0,  1, 1,  0, 1,
-        ] )
-        break
-
-      case `sphere`: {
+        // bottom
+        0, 0,  1, 0,  0, 1,
+        1, 0,  1, 1,  0, 1,
+      ] )
+    }
+    else if ( name == `sphere` ) {
         const total = 100
         const totalPlus1 = total + 1
         const globe = Array.from( { length:totalPlus1 } ).map( () => [] )
@@ -999,8 +996,68 @@ export class Model {
         vertices = new Float32Array( vertices )
         normals = new Float32Array( normals )
         textureCoords = new Float32Array( textureCoords )
-        break
+    }
+    else if ( name == `cylinder` ) {
+      const total = 100
+      const totalPlus1 = total + 1
+      const circle = Array.from( { length:totalPlus1 } ).map( () => [] )
+      // const r = 1
+
+      vertices = []
+      normals = []
+      textureCoords = []
+
+      for ( let i = 0; i < totalPlus1; i++ ) {
+        const lon = mapNum( i, 0, total, 0, Math.PI * 2 )
+        const x = /* r * */ Math.sin( lon )
+        const z = /* r * */ Math.cos( lon )
+
+        circle[ i ] = { x, z }
       }
+
+      for ( let i = 0; i < total; i++ ) {
+        if ( i != 0 && i != total - 1 ) {
+          const base = [
+            circle[ 0     ],
+            circle[ i     ],
+            circle[ i + 1 ],
+          ]
+
+          for ( const v of base ) {
+            vertices.push( v.x, 1, v.z )
+            normals.push( 0 /* / r */, 1 /* / r */, 0 /* / r */ )
+            textureCoords.push( 0, 0 )
+          }
+          for ( const v of base.reverse() ) {
+            vertices.push( v.x, -1, v.z )
+            normals.push( 0 /* / r */, -1 /* / r */, 0 /* / r */ )
+            textureCoords.push( 0, 0 )
+          }
+        }
+        const verts = [
+          { y:1,  ...circle[ i    ] },
+          { y:-1, ...circle[ i    ] },
+          { y:-1, ...circle[ i + 1] },
+        ]
+
+        for ( const v of verts ) {
+          vertices.push( v.x, v.y, v.z )
+          normals.push( v.x /* / r */, 0 /* / r */, v.z /* / r */ )
+          textureCoords.push( 0, 0 )
+        }
+
+        verts[ 1 ] = { y:1, ...circle[ i + 1] }
+
+        for ( const v of verts.reverse() ) {
+          vertices.push( v.x, v.y, v.z )
+          normals.push( v.x /* / r */, 0 /* / r */, v.z /* / r */ )
+          textureCoords.push( 0, 0 )
+        }
+      }
+
+      vertices = new Float32Array( vertices )
+      normals = new Float32Array( normals )
+      textureCoords = new Float32Array( textureCoords )
     }
 
     Model.flipTextureCoords( textureCoords )
@@ -1016,6 +1073,7 @@ export class Model {
     model.data.vertices = vertices
     model.data.normals = normals
     model.data.indices = new Float32Array( new Array( vertices.length / 3 ) )
+
 
     return model
   }

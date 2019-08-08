@@ -36,6 +36,7 @@ const ctx = new Renderer( gl )
   ctx.loadModel( `box`, `box`, 50, 100, 150 )
   ctx.loadModel( `plane`, `plane` )
   ctx.loadModel( `sphere`, `sphere`, 100 )
+  ctx.loadModel( `cylinder`, `cylinder` )
 
   // await ctx.createTextureImg( `UVMap`, `./models/UVMap.png` )
   // ctx.useTexture( `UVMap` )
@@ -95,7 +96,7 @@ function draw() {
   ctx.draw( `plane`, { y:-200, x:-400, rX:(-rX / 2) } )
   ctx.draw( `box`, { x:600, z:600, rX:(-rX * 2), rY:-rY, rZ } )
   ctx.draw( `cube`, { x:200, y:-200, rX:(-rZ * 2), rY:-rX, rZ, mesh:true } )
-  // ctx.draw( `bunny`, { x:-600, z:600, rZ, rX:-90 } )
+  ctx.draw( `cylinder`, { x:350, y:-100, rX } )
 
   ctx.useMaterial( `mat1` )
 
