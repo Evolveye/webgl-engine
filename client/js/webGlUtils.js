@@ -1000,7 +1000,7 @@ export class Model {
     else if ( name == `cylinder` ) {
       const total = 100
       const totalPlus1 = total + 1
-      const circle = Array.from( { length:totalPlus1 } ).map( () => [] )
+      const circle = []
       // const r = 1
 
       vertices = []
@@ -1009,8 +1009,8 @@ export class Model {
 
       for ( let i = 0; i < totalPlus1; i++ ) {
         const lon = mapNum( i, 0, total, 0, Math.PI * 2 )
-        const x = /* r * */ Math.sin( lon )
-        const z = /* r * */ Math.cos( lon )
+        const x = /* r */ Math.sin( lon )
+        const z = /* r */ Math.cos( lon )
 
         circle[ i ] = { x, z }
       }
@@ -1050,7 +1050,49 @@ export class Model {
 
         for ( const v of verts.reverse() ) {
           vertices.push( v.x, v.y, v.z )
-          normals.push( v.x /* / r */, 0 /* / r */, v.z /* / r */ )
+          normals.push( v.x, 0, v.z )
+          textureCoords.push( 0, 0 )
+        }
+      }
+
+      vertices = new Float32Array( vertices )
+      normals = new Float32Array( normals )
+      textureCoords = new Float32Array( textureCoords )
+    }
+    else if ( name == `wheel` ) {
+      const total = 100
+      const totalPlus1 = total + 1
+      const circle = []
+      // const r = 1
+
+      vertices = []
+      normals = []
+      textureCoords = []
+
+      for ( let i = 0; i < totalPlus1; i++ ) {
+        const lon = mapNum( i, 0, total, 0, Math.PI * 2 )
+        const x = Math.sin( lon )
+        const y = Math.cos( lon )
+
+        circle[ i ] = { x, y }
+      }
+
+      for ( let i = 1; i < total - 1; i++ ) {
+        const verts = [
+          circle[ 0     ],
+          circle[ i     ],
+          circle[ i + 1 ],
+        ]
+
+        for ( const v of verts ) {
+          vertices.push( v.x, v.y, 0 )
+          normals.push( 0, 0, -1 )
+          textureCoords.push( 0, 0 )
+        }
+
+        for ( const v of verts.reverse() ) {
+          vertices.push( v.x, v.y, 0 )
+          normals.push( 0, 0, 1 )
           textureCoords.push( 0, 0 )
         }
       }
