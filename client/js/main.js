@@ -1,12 +1,5 @@
-import Renderer, { mapNum, degToRad } from "./webGlUtils.js"
+import Renderer, { degToRad } from "./webGlUtils.js"
 import Keys from "./keys.js"
-
-
-/*
- TODO: better mesh drawing
- TODO: errors handling
-*/
-
 
 /** @type {WebGLRenderingContext} */
 const gl = document.querySelector( `.gl` ).getContext( `webgl2` )
