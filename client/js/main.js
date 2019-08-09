@@ -23,6 +23,7 @@ const mouse = {
   clicked: null,
   movingFactor: .35,
 }
+const lines = []
 
 gl.canvas.height = window.innerHeight
 gl.canvas.width = window.innerWidth
@@ -31,7 +32,7 @@ const ctx = new Renderer( gl )
 
 ~async function setup() {
   await ctx.loadModel( `barrel`, `./models/barrel.obj`, 100 )
-  // await ctx.loadModel( `bunny`, `./models/bunny.obj`, 100 )
+  // await ctx.loadModel( `mapa`, `./models/mapa.obj`, 100 )
   ctx.loadModel( `cube`, `box` )
   ctx.loadModel( `box`, `box`, 50, 100, 150 )
   ctx.loadModel( `plane`, `plane` )
@@ -82,30 +83,37 @@ function draw() {
 
   ctx.useMaterial( `mat2` )
 
-  // ctx.useTexture( `red` )
-  // ctx.draw( `barrel`, { mesh:true, rX:45 } )
-  // ctx.draw( `barrel`, { x:-200 } )
-  // ctx.useTexture( `blue` )
-  // ctx.draw( `sphere`, { y:200, x:(Math.sin( degToRad( rX ) ) * 100) } )
+  ctx.useTexture( `red` )
+  ctx.draw( `barrel`, { mesh:true, rX:45 } )
+  ctx.draw( `barrel`, { x:-200 } )
+  ctx.useTexture( `blue` )
+  ctx.draw( `sphere`, { y:200, x:(Math.sin( degToRad( rX ) ) * 100) } )
 
-  // ctx.useMaterial( `mat2` )
-  // ctx.useTexture( `green` )
-  // ctx.draw( `cube`, { x:-500, y:200, rX:(-rX * 2), rY, rZ } )
-  // ctx.draw( `box`, { y:-200, rX:(-rX * 2), rY:-rY, rZ } )
+  ctx.useMaterial( `mat2` )
+  ctx.useTexture( `green` )
+  ctx.draw( `cube`, { x:-500, y:200, rX:(-rX * 2), rY, rZ } )
+  ctx.draw( `box`, { y:-200, rX:(-rX * 2), rY:-rY, rZ } )
 
   ctx.useTexture( `white` )
-  // ctx.drawLine( 2, { x:0 }, { x:100 } )
-  ctx.draw( `wheel` )
-  // ctx.draw( `plane`, { y:-200, x:-400, rX:(-rX / 2) } )
-  // ctx.draw( `box`, { x:600, z:600, rX:(-rX * 2), rY:-rY, rZ } )
-  // ctx.draw( `cube`, { x:200, y:-200, rX:(-rZ * 2), rY:-rX, rZ, mesh:true } )
-  // ctx.draw( `cylinder`, { x:350, y:-100, rX } )
+  lines.forEach( line => {
+    const lineLength = line.length
+    for ( let i = 1; i < lineLength; i++ ) {
+      const p1 = line[ i - 1 ]
+      const p2 = line[ i ]
 
-  // ctx.useMaterial( `mat1` )
+      ctx.drawLine( 15, p1, p2 )
+    }
+  } )
+  ctx.draw( `plane`, { y:-200, x:-400, rX:(-rX / 2) } )
+  ctx.draw( `box`, { x:600, z:600, rX:(-rX * 2), rY:-rY, rZ } )
+  ctx.draw( `cube`, { x:200, y:-200, rX:(-rZ * 2), rY:-rX, rZ, mesh:true } )
+  ctx.draw( `cylinder`, { x:350, y:-100, rX } )
 
-  // ctx.useTexture( `barrel` )
-  // ctx.draw( `barrel`, { x:200, rX, rY, rZ } )
-  // ctx.draw( `plane`, { y:-200, x:-300, rX:(-rX / 2) } )
+  ctx.useMaterial( `mat1` )
+
+  ctx.useTexture( `barrel` )
+  ctx.draw( `barrel`, { x:200, rX, rY, rZ } )
+  ctx.draw( `plane`, { y:-200, x:-300, rX:(-rX / 2) } )
 
   setTimeout( () => requestAnimationFrame( () => draw() ), 1000 / 60 )
 }
@@ -113,6 +121,7 @@ function draw() {
 addEventListener( `keydown`, ({ keyCode }) => keys.get( keyCode ).pressed = true )
 addEventListener( `keyup`,   ({ keyCode }) => keys.get( keyCode ).pressed = false )
 addEventListener( `mousedown`, ({ clientX, clientY }) => {
+  lines.push( [] )
   mouse.clicked = true
   mouse.x = clientX
   mouse.y = clientY
@@ -121,10 +130,13 @@ addEventListener( `mouseup`, () => mouse.clicked = false )
 addEventListener( `mousemove`, ({ clientX, clientY }) => {
   if ( !mouse.clicked ) return
   if ( mouse.x !== null ) {
-    mouse.rX -= mouse.y - clientY
-    mouse.rY -= mouse.x - clientX
+    if ( !keys.get( `ctrl` ).triggered ) {
+      mouse.rX -= mouse.y - clientY
+      mouse.rY -= mouse.x - clientX
 
-    ctx.rotateCamera( mouse.rX * mouse.movingFactor, mouse.rY * mouse.movingFactor )
+      ctx.rotateCamera( mouse.rX * mouse.movingFactor, mouse.rY * mouse.movingFactor )
+    }
+    else lines[ lines.length - 1].push( { x:(clientX - ctx.gl.canvas.width / 2), y:(-clientY + ctx.gl.canvas.height / 2) } )
   }
   mouse.x = clientX
   mouse.y = clientY

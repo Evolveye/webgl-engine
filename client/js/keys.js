@@ -66,6 +66,7 @@ export default class Keys {
       case `w`: return 87
 
       case `shift`: return 16
+      case `ctrl`: return 17
       case `space`: return 32
 
       default: return null

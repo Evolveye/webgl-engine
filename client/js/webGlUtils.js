@@ -1387,6 +1387,9 @@ export default class Renderer {
     gl.uniform3fv( this.uniforms.u_viewWorldPosition, this._cameraPos.data )
     gl.uniform3fv( this.uniforms.u_lightWorldPosition, this._pointLightPos.data )
 
+    this.loadModel( `$ line body`, `plane`, 2 )
+    this.loadModel( `$ line end`, `wheel`, 2 )
+
     this._rebuildMatrices()
   }
 
@@ -1580,7 +1583,7 @@ export default class Renderer {
     gl.uniform1f( uniforms.u_specularFactor, material.specularFactor )
   }
 
-  draw( modelName, { mesh=false, x=0, y=0, z=0, rX=0, rY=0, rZ=0 }={} ) {
+  draw( modelName, { mesh=false, x=0, y=0, z=0, rX=0, rY=0, rZ=0, sX=1, sY=1, sZ=1 }={} ) {
     const { gl, _matrices, models, cameraProgram, uniforms } = this
     const { vao, modelInfo } = models.get( modelName )
     const world = new Matrix4( _matrices.world )
@@ -1588,8 +1591,9 @@ export default class Renderer {
       .rotateX( degToRad( rX ) )
       .rotateY( degToRad( rY ) )
       .rotateZ( degToRad( rZ ) )
+      .scale( sX, sY, sZ )
     const worldViewProjection = new Matrix4( _matrices.worldViewProjection ).multiply( world )
-    const worldInverseTranspose = new Matrix4( new Matrix4( world ).inverse() ).transpose()
+    const worldInverseTranspose = new Matrix4( world ).inverse().transpose()
 
     gl.useProgram( cameraProgram )
     gl.bindVertexArray( vao )
@@ -1599,5 +1603,21 @@ export default class Renderer {
     gl.uniformMatrix4fv( uniforms.u_world, false, world.data )
 
     gl.drawArrays( mesh ? gl.LINE_STRIP : gl.TRIANGLES, 0, modelInfo.indices )
+  }
+  drawLine( width=2, point1, point2 ) {
+    const x = point2.x - point1.x
+    const y = point2.y - point1.y
+    const bodyStart = {
+      x: (point1.x || 0) + x / 2,
+      y: (point1.y || 0) + y/ 2,
+      z: (point1.z || 0),
+      sX: Math.sqrt( x**2 + y**2 ) / 2,
+      sY: width / 2,
+      rZ: (-Math.atan2( x, y ) + Math.PI / 2 ) * 180 / Math.PI
+    }
+
+    this.draw( `$ line end`, { ...point1, sY:(width / 2), sX:(width / 2) } )
+    this.draw( `$ line body`, bodyStart )
+    this.draw( `$ line end`, { ...point2, sY:(width / 2), sX:(width / 2) } )
   }
 }
