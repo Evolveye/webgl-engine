@@ -1,0 +1,9 @@
+[
+  {
+    "type": "external",
+    "title": "WebGL engine",
+    "section": "Projects from other repositories",
+    "description": "Simple self-written WebGL engine",
+    "src": "https://evolveye.github.io/webgl-engine/client/"
+  }
+]
